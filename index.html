@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Resumify - 高质感简历生成器</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%23e8b86d'/><text x='50' y='72' font-size='60' text-anchor='middle' fill='%231a1a2e' font-family='Arial' font-weight='bold'>R</text></svg>">
+  <link rel="stylesheet" href="styles.css?v=1.1">
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&family=Noto+Serif+SC:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- HTML2Canvas & jsPDF for high-fidelity canvas PDF export -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+  <div class="app-container">
+    <!-- LEFT PANEL: CONTROLS & FORMS -->
+    <aside class="editor-panel">
+      <!-- Header -->
+      <header class="editor-header">
+        <div class="logo">
+          <i data-lucide="sparkles" class="logo-icon"></i>
+          <h1>Resumify</h1>
+        </div>
+        <div class="header-actions">
+          <button id="btn-import" class="btn btn-secondary" title="导入 JSON 数据">
+            <i data-lucide="upload"></i>
+            <span>导入</span>
+          </button>
+          <button id="btn-export" class="btn btn-secondary" title="导出 JSON 数据">
+            <i data-lucide="download"></i>
+            <span>保存数据</span>
+          </button>
+          <button id="btn-print" class="btn btn-primary" title="免打印直接下载，支持中文不乱码且排版一致">
+            <i data-lucide="download-cloud"></i>
+            <span>导出 PDF</span>
+          </button>
+          <input type="file" id="import-file" accept=".json" style="display: none;">
+        </div>
+      </header>
+
+      <!-- Tabs Nav -->
+      <div class="editor-tabs">
+        <button class="tab-btn active" data-tab="tab-content" title="编辑简历数据内容">
+          <i data-lucide="edit-3"></i>
+          <span>内容编辑</span>
+        </button>
+        <button class="tab-btn" data-tab="tab-layout" title="定制简历外观排版">
+          <i data-lucide="layout"></i>
+          <span>排版与板块</span>
+        </button>
+      </div>
+
+      <!-- Tab Content: Content Editing -->
+      <div id="tab-content" class="tab-content active">
+        <div class="forms-container">
+        <!-- Personal Info -->
+        <section class="control-card form-section" data-section-id="personal">
+          <div class="section-header" onclick="toggleCard(this)">
+            <div class="header-title">
+              <i data-lucide="user"></i>
+              <h2>基本信息 (Personal Info)</h2>
+            </div>
+            <i data-lucide="chevron-down" class="toggle-icon"></i>
+          </div>
+          <div class="section-content">
+            <div class="form-grid">
+              <div class="input-group full-width">
+                <label for="info-name">姓名</label>
+                <input type="text" id="info-name" placeholder="张三">
+              </div>
+              <div class="input-group">
+                <label for="info-title">意向岗位 / 职业头衔</label>
+                <input type="text" id="info-title" placeholder="前端开发工程师">
+              </div>
+              <div class="input-group full-width">
+                <label>头像</label>
+                <div class="avatar-upload-area" id="avatar-upload-area">
+                  <img id="avatar-preview-img" class="avatar-preview-img" src="" alt="">
+                  <div class="avatar-upload-placeholder" id="avatar-upload-placeholder">
+                    <i data-lucide="camera"></i>
+                    <span>点击上传</span>
+                  </div>
+                  <input type="file" id="avatar-file-input" accept="image/*" style="display:none;">
+                  <button class="avatar-remove-btn" id="avatar-remove-btn" title="移除头像" style="display:none;">
+                    <i data-lucide="x"></i>
+                  </button>
+                </div>
+                <div class="avatar-url-fallback">
+                  <input type="text" id="info-avatar" placeholder="或粘贴图片链接 https://...">
+                </div>
+              </div>
+              <div class="input-group">
+                <label for="info-email">电子邮箱</label>
+                <input type="email" id="info-email" placeholder="zhangsan@example.com">
+              </div>
+              <div class="input-group">
+                <label for="info-phone">联系电话</label>
+                <input type="tel" id="info-phone" placeholder="138-0000-0000">
+              </div>
+              <div class="input-group">
+                <label for="info-location">所在城市</label>
+                <input type="text" id="info-location" placeholder="北京">
+              </div>
+              <div class="input-group">
+                <label for="info-website">个人网站</label>
+                <input type="url" id="info-website" placeholder="https://zhangsan.dev">
+              </div>
+              <div class="input-group">
+                <label for="info-github">GitHub</label>
+                <input type="text" id="info-github" placeholder="github.com/zhangsan">
+              </div>
+              <div class="input-group">
+                <label for="info-linkedin">LinkedIn</label>
+                <input type="text" id="info-linkedin" placeholder="linkedin.com/in/zhangsan">
+              </div>
+              <div class="input-group">
+                <label for="info-age">年龄</label>
+                <input type="text" id="info-age" placeholder="例如：21岁">
+              </div>
+              <div class="input-group">
+                <label for="info-gender">性别</label>
+                <input type="text" id="info-gender" placeholder="例如：男">
+              </div>
+              <div class="input-group">
+                <label for="info-arrivalTime">到岗时间</label>
+                <input type="text" id="info-arrivalTime" placeholder="例如：一月内到岗">
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Summary -->
+        <section class="control-card form-section" data-section-id="summary">
+          <div class="section-header" onclick="toggleCard(this)">
+            <div class="header-title">
+              <i data-lucide="book-open"></i>
+              <h2>个人优势 / 自我评价 (Summary)</h2>
+            </div>
+            <i data-lucide="chevron-down" class="toggle-icon"></i>
+          </div>
+          <div class="section-content">
+            <div class="input-group full-width">
+              <label for="info-summary">自我评价 (简短有力，3-4句话为佳)</label>
+              <textarea id="info-summary" rows="4" placeholder="写写你的核心竞争力和经验概括..."></textarea>
+            </div>
+          </div>
+        </section>
+
+        <!-- Experience -->
+        <section class="control-card form-section" data-section-id="experience">
+          <div class="section-header" onclick="toggleCard(this)">
+            <div class="header-title">
+              <i data-lucide="briefcase"></i>
+              <h2>工作经历 (Experience)</h2>
+            </div>
+            <i data-lucide="chevron-down" class="toggle-icon"></i>
+          </div>
+          <div class="section-content">
+            <div class="items-list" id="experience-items">
+              <!-- Dynamically populated -->
+            </div>
+            <button class="btn btn-outline full-width" id="add-exp-btn">
+              <i data-lucide="plus"></i>
+              <span>添加工作经历</span>
+            </button>
+          </div>
+        </section>
+
+        <!-- Education -->
+        <section class="control-card form-section" data-section-id="education">
+          <div class="section-header" onclick="toggleCard(this)">
+            <div class="header-title">
+              <i data-lucide="graduation-cap"></i>
+              <h2>教育背景 (Education)</h2>
+            </div>
+            <i data-lucide="chevron-down" class="toggle-icon"></i>
+          </div>
+          <div class="section-content">
+            <div class="items-list" id="education-items">
+              <!-- Dynamically populated -->
+            </div>
+            <button class="btn btn-outline full-width" id="add-edu-btn">
+              <i data-lucide="plus"></i>
+              <span>添加教育背景</span>
+            </button>
+          </div>
+        </section>
+
+        <!-- Projects -->
+        <section class="control-card form-section" data-section-id="projects">
+          <div class="section-header" onclick="toggleCard(this)">
+            <div class="header-title">
+              <i data-lucide="folder-git2"></i>
+              <h2>项目经验 (Projects)</h2>
+            </div>
+            <i data-lucide="chevron-down" class="toggle-icon"></i>
+          </div>
+          <div class="section-content">
+            <div class="items-list" id="project-items">
+              <!-- Dynamically populated -->
+            </div>
+            <button class="btn btn-outline full-width" id="add-proj-btn">
+              <i data-lucide="plus"></i>
+              <span>添加项目经历</span>
+            </button>
+          </div>
+        </section>
+
+        <!-- Skills -->
+        <section class="control-card form-section" data-section-id="skills">
+          <div class="section-header" onclick="toggleCard(this)">
+            <div class="header-title">
+              <i data-lucide="check-circle2"></i>
+              <h2>专业技能 (Skills)</h2>
+            </div>
+            <i data-lucide="chevron-down" class="toggle-icon"></i>
+          </div>
+          <div class="section-content">
+            <div class="items-list" id="skill-items">
+              <!-- Dynamically populated -->
+            </div>
+            <button class="btn btn-outline full-width" id="add-skill-btn">
+              <i data-lucide="plus"></i>
+              <span>添加技能分类</span>
+            </button>
+          </div>
+        </section>
+        </div>
+      </div>
+
+      <!-- Tab Content: Layout & Customization -->
+      <div id="tab-layout" class="tab-content">
+        <div class="layout-container" style="padding: 16px 24px 40px; display: flex; flex-direction: column; gap: 16px;">
+          <!-- Customization Panel -->
+          <section class="control-card customization-card">
+            <div class="section-header" onclick="toggleCard(this)">
+              <div class="header-title">
+                <i data-lucide="sliders"></i>
+                <h2>排版与主题定制</h2>
+              </div>
+              <i data-lucide="chevron-down" class="toggle-icon"></i>
+            </div>
+            <div class="section-content">
+              <!-- Templates -->
+              <div class="control-group">
+                <label>简历模板</label>
+                <div class="template-selector">
+                  <button class="template-btn active" data-template="modern">
+                    <span class="preview-dot modern-dot"></span>
+                    <span>现代专业 (Modern)</span>
+                  </button>
+                  <button class="template-btn" data-template="elegant">
+                    <span class="preview-dot elegant-dot"></span>
+                    <span>优雅经典 (Elegant)</span>
+                  </button>
+                  <button class="template-btn" data-template="sidebar">
+                    <span class="preview-dot sidebar-dot"></span>
+                    <span>商务侧栏 (Sidebar)</span>
+                  </button>
+                  <button class="template-btn" data-template="geek">
+                    <span class="preview-dot geek-dot"></span>
+                    <span>极客技术 (Geek)</span>
+                  </button>
+                  <button class="template-btn" data-template="minimal">
+                    <span class="preview-dot minimal-dot"></span>
+                    <span>极简风格 (Minimal)</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Color Themes -->
+              <div class="control-group">
+                <label>主题配色</label>
+                <div class="color-presets">
+                   <button class="color-preset-btn active" data-color="theme-navy" style="--preset-color: #1e293b; --preset-accent: #0f766e;" title="深海蓝"></button>
+                   <button class="color-preset-btn" data-color="theme-emerald" style="--preset-color: #064e3b; --preset-accent: #059669;" title="翡翠绿"></button>
+                   <button class="color-preset-btn" data-color="theme-wine" style="--preset-color: #4c0519; --preset-accent: #be123c;" title="红酒红"></button>
+                   <button class="color-preset-btn" data-color="theme-indigo" style="--preset-color: #1e1b4b; --preset-accent: #4f46e5;" title="极光紫"></button>
+                   <button class="color-preset-btn" data-color="theme-dark" style="--preset-color: #111827; --preset-accent: #4b5563;" title="曜石黑"></button>
+                   <button class="color-preset-btn" data-color="theme-amber" style="--preset-color: #78350f; --preset-accent: #d97706;" title="琥珀金"></button>
+                   <button class="color-preset-btn" data-color="theme-slate" style="--preset-color: #1e3a8a; --preset-accent: #3b82f6;" title="石青蓝"></button>
+                   <button class="color-preset-btn" data-color="theme-sand" style="--preset-color: #45322e; --preset-accent: #c27854;" title="暖沙杏"></button>
+                   <button class="color-preset-btn" data-color="theme-olive" style="--preset-color: #14532d; --preset-accent: #16a34a;" title="森林绿"></button>
+                   <button class="color-preset-btn" data-color="theme-rose" style="--preset-color: #4c1d24; --preset-accent: #db2777;" title="玫瑰金"></button>
+                 </div>
+              </div>
+
+              <!-- Fonts & Spacing -->
+              <div class="control-row">
+                <div class="control-subgroup">
+                  <label for="select-font">字体选择</label>
+                  <select id="select-font">
+                    <option value="font-sans" selected>无衬线 (Inter / 微软雅黑)</option>
+                    <option value="font-serif">衬线体 (Outfit / 宋体)</option>
+                    <option value="font-tech">经典楷体 (STKaiti / 楷体)</option>
+                  </select>
+                </div>
+                <div class="control-subgroup">
+                  <label for="select-spacing">排版间距</label>
+                  <select id="select-spacing">
+                    <option value="spacing-compact">紧凑 (Compact)</option>
+                    <option value="spacing-normal" selected>适中 (Normal)</option>
+                    <option value="spacing-comfortable">宽松 (Comfortable)</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Section Reordering -->
+          <section class="control-card sections-order-card">
+            <div class="section-header" onclick="toggleCard(this)">
+              <div class="header-title">
+                <i data-lucide="layers"></i>
+                <h2>模块顺序与显示</h2>
+              </div>
+              <i data-lucide="chevron-down" class="toggle-icon"></i>
+            </div>
+            <div class="section-content">
+              <div class="sortable-list" id="sortable-sections">
+                <!-- Dynamic elements will be injected here by JS -->
+              </div>
+            </div>
+          </section>
+        </div>
+      </div>
+    </aside>
+
+    <!-- RIGHT PANEL: LIVE PREVIEW -->
+    <main class="preview-panel">
+      <!-- Preview toolbar -->
+      <div class="preview-toolbar">
+        <div class="toolbar-left">
+          <span class="status-indicator">
+            <span class="pulse-dot"></span>
+            实时同步中
+          </span>
+          <span id="page-count" class="page-count-badge" title="当前简历页数">
+            <i data-lucide="file-text" style="width: 14px; height: 14px;"></i>
+            <span>1 页</span>
+          </span>
+        </div>
+        <div class="toolbar-right">
+          <button id="btn-zoom-out" class="toolbar-btn" title="缩小">
+            <i data-lucide="minus"></i>
+          </button>
+          <input type="text" id="zoom-value" value="100%" title="输入缩放比例后回车确认" />
+          <button id="btn-zoom-in" class="toolbar-btn" title="放大">
+            <i data-lucide="plus"></i>
+          </button>
+          <div class="divider"></div>
+          <button id="btn-fit-screen" class="toolbar-btn" title="适应屏幕">
+            <i data-lucide="maximize-2"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Preview container -->
+      <div class="preview-container">
+        <div id="resume-container" class="resume-container">
+          <!-- Multiple resume pages dynamically rendered via app.js -->
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Avatar Crop Modal -->
+  <div class="crop-modal" id="crop-modal" style="display:none;">
+    <div class="crop-modal-backdrop" id="crop-modal-backdrop"></div>
+    <div class="crop-modal-content">
+      <h3 class="crop-title">裁切头像</h3>
+      <div class="crop-viewport" id="crop-viewport">
+        <img id="crop-image" class="crop-image" src="" alt="" draggable="false">
+        <div class="crop-mask-ring"></div>
+      </div>
+      <div class="crop-zoom-row">
+        <i data-lucide="minimize-2"></i>
+        <input type="range" id="crop-zoom" min="1" max="4" step="0.01" value="1">
+        <i data-lucide="maximize-2"></i>
+      </div>
+      <div class="crop-actions">
+        <button class="btn btn-secondary" id="crop-cancel">取消</button>
+        <button class="btn btn-primary" id="crop-confirm">确认裁切</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js?v=1.1"></script>
+</body>
+</html>
