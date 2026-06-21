@@ -2,6 +2,8 @@
 
 一个纯前端、零依赖的简历生成应用。左右分栏布局，左侧编辑器填写内容，右侧实时预览多页 A4 简历效果。无需构建工具、无需服务器，浏览器打开 `index.html` 即可使用。
 
+**🔗 在线体验：[https://resumify-li.netlify.app/](https://resumify-li.netlify.app/)**
+
 ## 功能特性
 
 ### 内容编辑
