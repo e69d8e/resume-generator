@@ -311,6 +311,7 @@ function initApp() {
   bindFormInputs();
   initAvatarUpload();
   initTabs();
+  initMobileNav();
   
   // Render views
   renderSortableSections();
@@ -356,6 +357,35 @@ function initTabs() {
       // Re-run Lucide in case tabs had unrendered icons
       lucide.createIcons();
     });
+  });
+}
+
+function initMobileNav() {
+  const btnEdit = document.getElementById('mobile-btn-edit');
+  const btnPreview = document.getElementById('mobile-btn-preview');
+  const appContainer = document.querySelector('.app-container');
+
+  if (!btnEdit || !btnPreview || !appContainer) return;
+
+  btnEdit.addEventListener('click', () => {
+    btnEdit.classList.add('active');
+    btnPreview.classList.remove('active');
+    appContainer.classList.remove('active-preview');
+  });
+
+  btnPreview.addEventListener('click', () => {
+    btnPreview.classList.add('active');
+    btnEdit.classList.remove('active');
+    appContainer.classList.add('active-preview');
+    
+    // Automatically fit screen on mobile view
+    fitScreenMode = true;
+    const btnFit = document.getElementById('btn-fit-screen');
+    if (btnFit) {
+      btnFit.classList.add('active');
+    }
+    // Delay zoom update to let DOM display changes apply
+    setTimeout(updateZoom, 50);
   });
 }
 
@@ -913,9 +943,8 @@ function bindActions() {
     importFile.value = '';
   });
 
-  // Print PDF Trigger — renders each .resume-page as a separate PDF page
-  document.getElementById('btn-print').addEventListener('click', async () => {
-    const btn = document.getElementById('btn-print');
+  // Shared Print PDF function
+  async function handlePrintPDF(btn) {
     const originalHTML = btn.innerHTML;
 
     // Disable contenteditable during export
@@ -972,7 +1001,19 @@ function bindActions() {
       btn.innerHTML = originalHTML;
       lucide.createIcons();
     }
+  }
+
+  // Print PDF Triggers
+  document.getElementById('btn-print').addEventListener('click', function() {
+    handlePrintPDF(this);
   });
+
+  const btnPrintPreview = document.getElementById('btn-print-preview');
+  if (btnPrintPreview) {
+    btnPrintPreview.addEventListener('click', function() {
+      handlePrintPDF(this);
+    });
+  }
 
 }
 
@@ -985,11 +1026,12 @@ function updateZoom() {
   if (!wrapper || !previewContainer) return;
 
   if (fitScreenMode) {
-    const containerWidth = previewContainer.clientWidth - 80;
+    const paddingOffset = window.innerWidth <= 768 ? 16 : 80;
+    const containerWidth = previewContainer.clientWidth - paddingOffset;
     const scaleWidth = containerWidth / 794; // 210mm ≈ 794px
 
     let scale = Math.min(scaleWidth, 1.2);
-    scale = Math.max(0.4, scale);
+    scale = Math.max(0.2, scale);
 
     wrapper.style.transform = `scale(${scale})`;
     zoomInput.value = `${Math.round(scale * 100)}%`;

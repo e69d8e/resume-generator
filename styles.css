@@ -3138,3 +3138,262 @@ textarea {
   height: 18px;
   flex-shrink: 0;
 }
+
+/* ==========================================
+   MOBILE & RESPONSIVE ADAPTATION STYLES
+   ========================================== */
+
+/* Hide mobile nav and print preview button on desktop */
+.mobile-nav,
+#btn-print-preview {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  /* Mobile Navigation Bar */
+  .mobile-nav {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 60px;
+    background-color: rgba(245, 240, 232, 0.95);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border-top: 1px solid var(--ui-border);
+    z-index: 1000;
+    box-shadow: 0 -4px 12px rgba(20, 20, 19, 0.05);
+  }
+
+  .mobile-nav-btn {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    background: none;
+    border: none;
+    color: var(--ui-text-muted);
+    cursor: pointer;
+    font-family: var(--font-ui);
+    font-size: 11px;
+    font-weight: 500;
+    transition: var(--transition);
+    height: 100%;
+    padding: 0;
+  }
+
+  .mobile-nav-btn i {
+    width: 20px;
+    height: 20px;
+    transition: transform 0.2s ease, color 0.2s ease;
+  }
+
+  .mobile-nav-btn:active i {
+    transform: scale(0.9);
+  }
+
+  .mobile-nav-btn.active {
+    color: var(--ui-primary);
+  }
+  
+  .mobile-nav-btn.active i {
+    color: var(--ui-primary);
+    transform: translateY(-2px);
+  }
+
+  /* Body settings to prevent layout bounce */
+  body {
+    overflow: hidden;
+    height: 100vh;
+  }
+
+  /* App container adjustments for mobile tabs */
+  .app-container {
+    flex-direction: column;
+    height: 100vh;
+    width: 100vw;
+    overflow: hidden;
+  }
+
+  /* Active Panel switching logic */
+  .app-container.active-preview .editor-panel {
+    display: none !important;
+  }
+  
+  .app-container.active-preview .preview-panel {
+    display: flex !important;
+    width: 100% !important;
+    height: calc(100vh - 60px) !important;
+    flex: 1 !important;
+  }
+
+  .app-container:not(.active-preview) .editor-panel {
+    display: flex !important;
+    width: 100% !important;
+    height: calc(100vh - 60px) !important;
+    flex: 1 !important;
+  }
+  
+  .app-container:not(.active-preview) .preview-panel {
+    display: none !important;
+  }
+
+  /* Editor Panel Adjustments */
+  .editor-panel {
+    width: 100% !important;
+    min-width: 0 !important;
+    height: calc(100vh - 60px) !important;
+  }
+  
+  .editor-header {
+    padding: 12px 16px !important;
+    gap: 12px !important;
+  }
+  
+  .logo h1 {
+    font-size: 20px !important;
+  }
+  
+  .logo-icon {
+    width: 22px !important;
+    height: 22px !important;
+  }
+  
+  .header-actions {
+    gap: 6px !important;
+  }
+  
+  .header-actions .btn {
+    height: 36px !important;
+    padding: 8px 12px !important;
+    font-size: 13px !important;
+  }
+
+  /* On narrow screens, hide text for import/save buttons */
+  @media (max-width: 480px) {
+    .header-actions #btn-import span,
+    .header-actions #btn-export span {
+      display: none;
+    }
+    .header-actions #btn-import,
+    .header-actions #btn-export {
+      padding: 8px !important;
+      flex-grow: 0 !important;
+      width: 36px !important;
+      flex: none !important;
+    }
+    .header-actions #btn-print {
+      flex: 1 !important;
+    }
+  }
+
+  /* Input fields: size 16px to prevent iOS Safari auto-zooming on focus */
+  select, input[type="text"], input[type="email"], input[type="tel"], input[type="url"], textarea {
+    font-size: 16px !important;
+  }
+
+  /* Form layout stack */
+  .form-grid {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+
+  .input-group.full-width {
+    grid-column: auto !important;
+  }
+
+  /* Paddings in editor tab contents */
+  .forms-container {
+    padding: 12px 16px 40px !important;
+  }
+  
+  .control-card {
+    border-radius: var(--ui-radius) !important;
+  }
+  
+  .section-header {
+    padding: 12px 14px !important;
+  }
+  
+  .section-content {
+    padding: 14px !important;
+  }
+
+  .layout-container {
+    padding: 12px 16px 40px !important;
+  }
+
+  /* Avatar Crop Modal responsiveness */
+  .crop-modal-content {
+    max-width: 90% !important;
+    width: 340px !important;
+    padding: 20px !important;
+    gap: 16px !important;
+  }
+  
+  .crop-viewport {
+    width: 200px !important;
+    height: 200px !important;
+  }
+
+  /* Preview Panel adjustments */
+  .preview-panel {
+    height: calc(100vh - 60px) !important;
+  }
+
+  .preview-toolbar {
+    height: 50px !important;
+    padding: 0 16px !important;
+  }
+
+  .preview-toolbar .toolbar-left {
+    width: 100% !important;
+    justify-content: flex-start;
+    gap: 8px;
+  }
+
+  /* Hide zoom range slider/buttons on mobile */
+  .preview-toolbar .toolbar-right {
+    display: none !important;
+  }
+  
+  /* Status Indicator Compactness */
+  .preview-toolbar .status-indicator {
+    font-size: 12px !important;
+  }
+  .preview-toolbar .status-indicator span:not(.pulse-dot) {
+    display: none !important;
+  }
+  
+  /* Show and style secondary PDF export button */
+  #btn-print-preview {
+    display: inline-flex !important;
+    height: 32px !important;
+    padding: 0 12px !important;
+    font-size: 12.5px !important;
+    border-radius: var(--ui-radius-sm) !important;
+    margin-left: auto !important;
+    align-items: center;
+    gap: 6px;
+    flex: none !important;
+  }
+  
+  #btn-print-preview i {
+    width: 14px !important;
+    height: 14px !important;
+  }
+  
+  /* Preview area scroll and margins */
+  .preview-container {
+    padding: 16px 8px !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+  }
+
+  .resume-container {
+    gap: 16px !important;
+  }
+}

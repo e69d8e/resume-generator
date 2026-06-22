@@ -344,6 +344,10 @@
             <i data-lucide="file-text" style="width: 14px; height: 14px;"></i>
             <span>1 页</span>
           </span>
+          <button id="btn-print-preview" class="btn btn-primary btn-print-preview" title="免打印直接下载，支持中文不乱码且排版一致">
+            <i data-lucide="download-cloud"></i>
+            <span>导出 PDF</span>
+          </button>
         </div>
         <div class="toolbar-right">
           <button id="btn-zoom-out" class="toolbar-btn" title="缩小">
@@ -367,6 +371,18 @@
         </div>
       </div>
     </main>
+  </div>
+
+  <!-- Mobile Navigation Bar -->
+  <div class="mobile-nav">
+    <button class="mobile-nav-btn active" id="mobile-btn-edit">
+      <i data-lucide="edit-3"></i>
+      <span>编辑内容</span>
+    </button>
+    <button class="mobile-nav-btn" id="mobile-btn-preview">
+      <i data-lucide="eye"></i>
+      <span>预览简历</span>
+    </button>
   </div>
 
   <!-- Avatar Crop Modal -->
