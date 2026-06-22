@@ -2,6 +2,140 @@
 // RESUMIFY APPLICATION STATE & LOGIC
 // ==========================================
 
+// ==========================================
+// CONSTANTS & CONFIGURATION
+// ==========================================
+
+const GITHUB_SVG = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-github"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"></path><path d="M9 18c-4.51 2-5-2-7-2"></path></svg>';
+const LINKEDIN_SVG = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-linkedin"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path><rect x="2" y="9" width="4" height="12"></rect><circle cx="4" cy="4" r="2"></circle></svg>';
+
+const DEFAULT_SECTION_COLUMNS = { summary: 'left', experience: 'left', projects: 'left', skills: 'right', education: 'right' };
+const SPACING_MAP = { 'spacing-compact': 16, 'spacing-normal': 20, 'spacing-comfortable': 26 };
+const SECTION_NAMES = { summary: '自我评价', experience: '工作经历', projects: '项目经验', education: '教育背景', skills: '专业技能' };
+
+const CARD_TITLE_CONFIG = {
+  experience: [['company', '新加入公司'], ' - ', ['role', '新职位']],
+  education: [['institution', '新加入学校'], ' - ', ['degree', '学历'], ' ', ['major', '']],
+  projects: [['name', '新项目名称'], ' - ', ['role', '担任角色']],
+  skills: [['category', '新技能分类']]
+};
+
+const FORM_CONFIGS = {
+  experience: {
+    containerId: 'experience-items', addBtnId: 'add-exp-btn', idPrefix: 'exp',
+    newItem: { company: '', role: '', startDate: '', endDate: '', description: '' },
+    fields: [
+      { name: 'company', label: '公司名称', updateTitle: true },
+      { name: 'role', label: '工作岗位', updateTitle: true },
+      { name: 'startDate', label: '开始时间', placeholder: '例如：2020-03' },
+      { name: 'endDate', label: '结束时间', placeholder: '例如：2023-05 或 至今' },
+      { name: 'description', label: '工作描述 (支持换行，建议以列表形式描述)', type: 'textarea', rows: 5, placeholder: '1. 主导项目...\n2. 负责开发...', fullWidth: true }
+    ]
+  },
+  education: {
+    containerId: 'education-items', addBtnId: 'add-edu-btn', idPrefix: 'edu',
+    newItem: { institution: '', degree: '', major: '', startDate: '', endDate: '', description: '' },
+    fields: [
+      { name: 'institution', label: '学校 / 机构名称', updateTitle: true },
+      { name: 'degree', label: '学位 / 证书', placeholder: '例如：学士 / 硕士', updateTitle: true },
+      { name: 'major', label: '专业 / 科系', placeholder: '例如：计算机科学', updateTitle: true },
+      { name: 'startDate', label: '起止时间', placeholder: '例如：2016.09 - 2020.06' },
+      { name: 'description', label: '教育背景描述 (选填)', type: 'textarea', rows: 3, placeholder: '专业绩点、主修课程、奖学金或在校荣誉等', fullWidth: true }
+    ]
+  },
+  projects: {
+    containerId: 'project-items', addBtnId: 'add-proj-btn', idPrefix: 'proj',
+    newItem: { name: '', role: '', link: '', startDate: '', endDate: '', techStack: '', description: '' },
+    fields: [
+      { name: 'name', label: '项目名称', updateTitle: true },
+      { name: 'role', label: '担任角色', placeholder: '例如：项目负责人 / 核心开发', updateTitle: true },
+      { name: 'startDate', label: '开始时间', placeholder: '例如：2025-12' },
+      { name: 'endDate', label: '结束时间', placeholder: '例如：2026-05 或 至今' },
+      { name: 'techStack', label: '技术栈 (选填)', placeholder: '例如：Spring Boot, Redis, Vue3', fullWidth: true },
+      { name: 'link', label: '项目链接 (选填)', placeholder: '例如：github.com/username/project', fullWidth: true },
+      { name: 'description', label: '项目描述', type: 'textarea', rows: 4, placeholder: '描述该项目背景、您的职责、所用技术及项目成果', fullWidth: true }
+    ]
+  },
+  skills: {
+    containerId: 'skill-items', addBtnId: 'add-skill-btn', idPrefix: 'skill',
+    newItem: { category: '', tags: '' },
+    fields: [
+      { name: 'category', label: '技能分类名称', placeholder: '例如：编程语言 / 办公软件', fullWidth: true, updateTitle: true },
+      { name: 'tags', label: '具体技能标签 (英文逗号分隔)', placeholder: '例如：JavaScript, TypeScript, React', fullWidth: true }
+    ]
+  }
+};
+
+function getSpacingPad() {
+  return SPACING_MAP[state.spacing] || 30;
+}
+
+function showToast(message, type = 'success') {
+  let container = document.getElementById('toast-container');
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'toast-container';
+    document.body.appendChild(container);
+  }
+  
+  const toast = document.createElement('div');
+  toast.className = `toast toast-${type}`;
+  
+  let iconName = 'check-circle';
+  if (type === 'error') iconName = 'alert-triangle';
+  else if (type === 'info') iconName = 'info';
+  
+  toast.innerHTML = `
+    <i data-lucide="${iconName}" class="toast-icon"></i>
+    <span>${message}</span>
+  `;
+  
+  container.appendChild(toast);
+  lucide.createIcons();
+  
+  setTimeout(() => {
+    toast.classList.add('show');
+  }, 10);
+  
+  setTimeout(() => {
+    toast.classList.remove('show');
+    toast.addEventListener('transitionend', () => {
+      toast.remove();
+    });
+  }, 3000);
+}
+
+function getCardTitle(sectionType, item) {
+  return CARD_TITLE_CONFIG[sectionType].map(part =>
+    Array.isArray(part) ? (item[part[0]] || part[1]) : part
+  ).join('');
+}
+
+function buildContactItems(p, format) {
+  const items = [];
+  if (format === 'label') {
+    const labelContacts = [
+      ['age', '年 龄：'], ['gender', '性 别：'], ['phone', '电 话：'],
+      ['email', '邮 箱：'], ['location', '地 区：'], ['arrivalTime', '到 岗：'],
+      ['github', 'GitHub：'], ['linkedin', 'LinkedIn：'], ['website', '网 站：']
+    ];
+    labelContacts.forEach(([field, label]) => {
+      if (p[field]) items.push(`<div class="contact-item"><span class="contact-label">${label}</span><span contenteditable="true" data-path="personal.${field}">${p[field]}</span></div>`);
+    });
+  } else {
+    const iconContacts = [
+      ['age', 'calendar'], ['gender', 'user'], ['arrivalTime', 'clock'],
+      ['phone', 'phone'], ['email', 'mail'], ['location', 'map-pin'], ['website', 'globe']
+    ];
+    iconContacts.forEach(([field, icon]) => {
+      if (p[field]) items.push(`<div class="contact-item"><i data-lucide="${icon}"></i><span contenteditable="true" data-path="personal.${field}">${p[field]}</span></div>`);
+    });
+    if (p.github) items.push(`<div class="contact-item">${GITHUB_SVG}<span contenteditable="true" data-path="personal.github">${p.github}</span></div>`);
+    if (p.linkedin) items.push(`<div class="contact-item">${LINKEDIN_SVG}<span contenteditable="true" data-path="personal.linkedin">${p.linkedin}</span></div>`);
+  }
+  return items;
+}
+
 // Global state
 let state = {
   personal: {
@@ -105,13 +239,7 @@ let state = {
     projects: true,
     skills: true
   },
-  sectionColumns: {
-    summary: 'left',
-    experience: 'left',
-    projects: 'left',
-    skills: 'right',
-    education: 'right'
-  },
+  sectionColumns: { ...DEFAULT_SECTION_COLUMNS },
   theme: 'theme-navy',
   font: 'font-sans',
   spacing: 'spacing-normal',
@@ -271,10 +399,9 @@ function setupPreviewEditableListener() {
   });
 }
 
-// Toggle collapsible card handler (Main forms)
-window.toggleCard = function(headerElement) {
-  const card = headerElement.parentElement;
-  card.classList.toggle('collapsed');
+// Toggle collapsible card handler
+window.toggleCard = window.toggleItemCard = function(headerElement) {
+  headerElement.parentElement.classList.toggle('collapsed');
 };
 
 // ==========================================
@@ -426,7 +553,28 @@ function showCropModal(imageDataUrl) {
     const cancelBtn = document.getElementById('crop-cancel');
     const backdrop = document.getElementById('crop-modal-backdrop');
 
-    const VP_SIZE = 240; // viewport diameter
+    const isGeek = state.template === 'geek';
+    const isMinimal = state.template === 'minimal';
+    const isCircular = !isGeek && !isMinimal;
+
+    let vpW = 240;
+    let vpH = 240;
+    if (isGeek) {
+      vpW = 200;
+      vpH = 245; // aspect ratio 80:98 is 1:1.225. 200 * 1.225 = 245
+    }
+
+    // Set viewport style dynamically to match active template avatar shape
+    viewport.style.width = vpW + 'px';
+    viewport.style.height = vpH + 'px';
+    const borderRadiusVal = isCircular ? '50%' : (isGeek ? '12px' : '8px');
+    viewport.style.borderRadius = borderRadiusVal;
+    
+    const maskRing = viewport.querySelector('.crop-mask-ring');
+    if (maskRing) {
+      maskRing.style.borderRadius = borderRadiusVal;
+    }
+
     let imgW = 0, imgH = 0;
     let posX = 0, posY = 0;
     let scale = 1;
@@ -439,15 +587,15 @@ function showCropModal(imageDataUrl) {
       imgW = img.naturalWidth;
       imgH = img.naturalHeight;
 
-      // Scale to fill viewport (minScale = cover the circle)
-      const scaleX = VP_SIZE / imgW;
-      const scaleY = VP_SIZE / imgH;
+      // Scale to fill viewport (minScale = cover the viewport)
+      const scaleX = vpW / imgW;
+      const scaleY = vpH / imgH;
       minScale = Math.max(scaleX, scaleY);
       scale = minScale;
 
       // Center
-      posX = (VP_SIZE - imgW * scale) / 2;
-      posY = (VP_SIZE - imgH * scale) / 2;
+      posX = (vpW - imgW * scale) / 2;
+      posY = (vpH - imgH * scale) / 2;
 
       applyTransform();
       zoomSlider.min = minScale;
@@ -464,16 +612,16 @@ function showCropModal(imageDataUrl) {
     function clampPosition() {
       const sw = imgW * scale;
       const sh = imgH * scale;
-      // Image must cover the entire viewport circle
-      if (sw <= VP_SIZE) {
-        posX = (VP_SIZE - sw) / 2;
+      // Image must cover the entire viewport
+      if (sw <= vpW) {
+        posX = (vpW - sw) / 2;
       } else {
-        posX = Math.min(0, Math.max(VP_SIZE - sw, posX));
+        posX = Math.min(0, Math.max(vpW - sw, posX));
       }
-      if (sh <= VP_SIZE) {
-        posY = (VP_SIZE - sh) / 2;
+      if (sh <= vpH) {
+        posY = (vpH - sh) / 2;
       } else {
-        posY = Math.min(0, Math.max(VP_SIZE - sh, posY));
+        posY = Math.min(0, Math.max(vpH - sh, posY));
       }
     }
 
@@ -507,8 +655,8 @@ function showCropModal(imageDataUrl) {
       const oldScale = scale;
       scale = parseFloat(zoomSlider.value);
       // Zoom toward center of viewport
-      const cx = VP_SIZE / 2;
-      const cy = VP_SIZE / 2;
+      const cx = vpW / 2;
+      const cy = vpH / 2;
       posX = cx - (cx - posX) * (scale / oldScale);
       posY = cy - (cy - posY) * (scale / oldScale);
       clampPosition();
@@ -518,28 +666,38 @@ function showCropModal(imageDataUrl) {
     // Confirm crop
     function onConfirm() {
       const canvas = document.createElement('canvas');
-      const outSize = 256;
-      canvas.width = outSize;
-      canvas.height = outSize;
+      let outW = 256;
+      let outH = 256;
+      if (isGeek) {
+        outH = 314; // 256 * 1.225 = 313.6
+      }
+      canvas.width = outW;
+      canvas.height = outH;
       const ctx = canvas.getContext('2d');
 
-      // Map viewport circle → source image pixels
+      // Map viewport to source image pixels
       const srcX = -posX / scale;
       const srcY = -posY / scale;
-      const srcSize = VP_SIZE / scale;
+      const srcW = vpW / scale;
+      const srcH = vpH / scale;
 
-      // Clip to circle
-      ctx.beginPath();
-      ctx.arc(outSize / 2, outSize / 2, outSize / 2, 0, Math.PI * 2);
-      ctx.closePath();
-      ctx.clip();
+      if (isCircular) {
+        // Clip to circle
+        ctx.beginPath();
+        ctx.arc(outW / 2, outH / 2, outW / 2, 0, Math.PI * 2);
+        ctx.closePath();
+        ctx.clip();
+      }
 
-      ctx.drawImage(img, srcX, srcY, srcSize, srcSize, 0, 0, outSize, outSize);
+      ctx.drawImage(img, srcX, srcY, srcW, srcH, 0, 0, outW, outH);
       cleanup();
-      resolve(canvas.toDataURL('image/jpeg', 0.85));
+
+      // Use PNG for circular to support transparency, JPEG for square/rectangular
+      const mimeType = isCircular ? 'image/png' : 'image/jpeg';
+      resolve(canvas.toDataURL(mimeType, isCircular ? 1.0 : 0.85));
     }
 
-    function onCancel() {
+    function onConfirmCancel() {
       cleanup();
       resolve(null);
     }
@@ -554,9 +712,17 @@ function showCropModal(imageDataUrl) {
       document.removeEventListener('touchend', onPointerUp);
       zoomSlider.removeEventListener('input', onZoom);
       confirmBtn.removeEventListener('click', onConfirm);
-      cancelBtn.removeEventListener('click', onCancel);
-      backdrop.removeEventListener('click', onCancel);
+      cancelBtn.removeEventListener('click', onConfirmCancel);
+      backdrop.removeEventListener('click', onConfirmCancel);
       img.onload = null;
+
+      // Reset viewport styling to defaults to avoid bleeding to next crops
+      viewport.style.width = '';
+      viewport.style.height = '';
+      viewport.style.borderRadius = '';
+      if (maskRing) {
+        maskRing.style.borderRadius = '';
+      }
     }
 
     // Bind events
@@ -568,14 +734,15 @@ function showCropModal(imageDataUrl) {
     document.addEventListener('touchend', onPointerUp);
     zoomSlider.addEventListener('input', onZoom);
     confirmBtn.addEventListener('click', onConfirm);
-    cancelBtn.addEventListener('click', onCancel);
-    backdrop.addEventListener('click', onCancel);
+    cancelBtn.addEventListener('click', onConfirmCancel);
+    backdrop.addEventListener('click', onConfirmCancel);
 
     // Show modal
     modal.style.display = 'flex';
     lucide.createIcons();
   });
 }
+
 
 // Bind top customization options
 function bindCustomizerControls() {
@@ -700,6 +867,7 @@ function bindActions() {
     document.body.appendChild(downloadAnchor);
     downloadAnchor.click();
     downloadAnchor.remove();
+    showToast('数据导出成功！');
   });
 
   // Import JSON trigger
@@ -721,13 +889,7 @@ function bindActions() {
         if (importedData.personal && importedData.experience) {
           state = { ...state, ...importedData };
           if (!state.sectionColumns) {
-            state.sectionColumns = {
-              summary: 'left',
-              experience: 'left',
-              projects: 'left',
-              skills: 'right',
-              education: 'right'
-            };
+            state.sectionColumns = { ...DEFAULT_SECTION_COLUMNS };
           }
           saveStateToLocalStorage();
           
@@ -738,12 +900,12 @@ function bindActions() {
           renderPreview();
           updateZoom();
           
-          alert('数据导入成功！');
+          showToast('数据导入成功！');
         } else {
-          alert('导入的 JSON 格式不合规范。');
+          showToast('导入的 JSON 格式不合规范。', 'error');
         }
       } catch (err) {
-        alert('读取文件出错，请确保是正确的 JSON 格式文件。');
+        showToast('读取文件出错，请确保是正确的 JSON 格式文件。', 'error');
       }
     };
     reader.readAsText(file);
@@ -797,9 +959,10 @@ function bindActions() {
       const now = new Date();
       const dateStr = `${String(now.getFullYear()).slice(-2)}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`;
       pdf.save(`${name}_${dateStr}.pdf`);
+      showToast('PDF 导出成功！');
     } catch (err) {
       console.error("PDF Export error:", err);
-      alert("PDF 导出失败，请重试！");
+      showToast("PDF 导出失败，请重试！", "error");
     } finally {
       editables.forEach(el => {
         el.setAttribute('contenteditable', 'true');
@@ -844,19 +1007,11 @@ function renderSortableSections() {
   const container = document.getElementById('sortable-sections');
   container.innerHTML = '';
 
-  const sectionNameMap = {
-    summary: '自我评价',
-    experience: '工作经历',
-    projects: '项目经验',
-    education: '教育背景',
-    skills: '专业技能'
-  };
-
   const isTwoColumnTemplate = state.template === 'modern' || state.template === 'sidebar';
 
   state.sectionOrder.forEach((section, index) => {
     const isVisible = state.sectionVisibility[section] !== false;
-    const displayName = sectionNameMap[section] || section;
+    const displayName = SECTION_NAMES[section] || section;
     const isLeft = (state.sectionColumns[section] || 'left') === 'left';
 
     const colBadgeHTML = isTwoColumnTemplate ? `
@@ -956,13 +1111,7 @@ function handleDragEnd(e) {
 window.toggleSectionColumn = function(section, event = null) {
   if (event) event.stopPropagation();
   if (!state.sectionColumns) {
-    state.sectionColumns = {
-      summary: 'left',
-      experience: 'left',
-      projects: 'left',
-      skills: 'right',
-      education: 'right'
-    };
+    state.sectionColumns = { ...DEFAULT_SECTION_COLUMNS };
   }
   state.sectionColumns[section] = state.sectionColumns[section] === 'left' ? 'right' : 'left';
   saveStateToLocalStorage();
@@ -989,110 +1138,48 @@ function renderAllForms() {
   renderSkillsForm();
 }
 
-// Generic Collapsible subcard toggle
-window.toggleItemCard = function(headerElement) {
-  const card = headerElement.parentElement;
-  card.classList.toggle('collapsed');
-};
-
-// Experience Forms
-function renderExperienceForm() {
-  const container = document.getElementById('experience-items');
+// Generic form renderer driven by FORM_CONFIGS
+function renderItemListForm(sectionType) {
+  const config = FORM_CONFIGS[sectionType];
+  const container = document.getElementById(config.containerId);
   container.innerHTML = '';
 
-  state.experience.forEach((item, index) => {
-    const isCollapsed = collapsedCards[item.id] !== false; // default collapsed
-    
-    const card = document.createElement('div');
-    card.className = `item-card ${isCollapsed ? 'collapsed' : ''}`;
-    card.dataset.id = item.id;
-    card.innerHTML = `
-      <div class="item-card-header" onclick="toggleItemCard(this)">
-        <span class="item-card-title">${item.company || '新加入公司'} - ${item.role || '新职位'}</span>
-        <div class="item-card-actions" onclick="event.stopPropagation()">
-          <button class="order-btn" title="上移" onclick="moveSubitem('experience', ${index}, 'up')">
-            <i data-lucide="chevron-up"></i>
-          </button>
-          <button class="order-btn" title="下移" onclick="moveSubitem('experience', ${index}, 'down')">
-            <i data-lucide="chevron-down"></i>
-          </button>
-          <button class="btn btn-danger-outline" onclick="deleteSubitem('experience', '${item.id}')">
-            删除
-          </button>
-          <i data-lucide="chevron-down" class="chevron-toggle"></i>
-        </div>
-      </div>
-      <div class="item-card-content">
-        <div class="form-grid">
-          <div class="input-group">
-            <label>公司名称</label>
-            <input type="text" value="${item.company || ''}" oninput="updateSubitemField('experience', '${item.id}', 'company', this.value, this)">
-          </div>
-          <div class="input-group">
-            <label>工作岗位</label>
-            <input type="text" value="${item.role || ''}" oninput="updateSubitemField('experience', '${item.id}', 'role', this.value, this)">
-          </div>
-          <div class="input-group">
-            <label>开始时间</label>
-            <input type="text" value="${item.startDate || ''}" placeholder="例如：2020-03" oninput="updateSubitemField('experience', '${item.id}', 'startDate', this.value)">
-          </div>
-          <div class="input-group">
-            <label>结束时间</label>
-            <input type="text" value="${item.endDate || ''}" placeholder="例如：2023-05 或 至今" oninput="updateSubitemField('experience', '${item.id}', 'endDate', this.value)">
-          </div>
-          <div class="input-group full-width">
-            <label>工作描述 (支持换行，建议以列表形式描述)</label>
-            <textarea rows="5" placeholder="1. 主导项目...\n2. 负责开发..." oninput="updateSubitemField('experience', '${item.id}', 'description', this.value)">${item.description || ''}</textarea>
-          </div>
-        </div>
-      </div>
-    `;
-    container.appendChild(card);
-  });
-  
-  // Bind dynamic add click
-  document.getElementById('add-exp-btn').onclick = () => {
-    const id = `exp-${Date.now()}`;
-    state.experience.push({
-      id,
-      company: '',
-      role: '',
-      startDate: '',
-      endDate: '',
-      description: ''
-    });
-    collapsedCards[id] = false; // Expand the new card immediately
-    saveStateToLocalStorage();
-    renderExperienceForm();
-    renderPreview();
-  };
-
-  lucide.createIcons();
-  initAutoExpandingTextareas();
-}
-
-// Education Forms
-function renderEducationForm() {
-  const container = document.getElementById('education-items');
-  container.innerHTML = '';
-
-  state.education.forEach((item, index) => {
+  state[sectionType].forEach((item, index) => {
     const isCollapsed = collapsedCards[item.id] !== false;
+    const title = getCardTitle(sectionType, item);
+
+    const fieldsHTML = config.fields.map(f => {
+      const value = item[f.name] || '';
+      const placeholderAttr = f.placeholder ? ` placeholder="${f.placeholder}"` : '';
+      const fullWidthClass = f.fullWidth ? ' full-width' : '';
+      const updateTitleArg = f.updateTitle ? ', this' : '';
+
+      if (f.type === 'textarea') {
+        return `<div class="input-group${fullWidthClass}">
+            <label>${f.label}</label>
+            <textarea rows="${f.rows || 3}"${placeholderAttr} oninput="updateSubitemField('${sectionType}', '${item.id}', '${f.name}', this.value)">${value}</textarea>
+          </div>`;
+      }
+      return `<div class="input-group${fullWidthClass}">
+          <label>${f.label}</label>
+          <input type="text" value="${value}"${placeholderAttr} oninput="updateSubitemField('${sectionType}', '${item.id}', '${f.name}', this.value${updateTitleArg})">
+        </div>`;
+    }).join('');
 
     const card = document.createElement('div');
     card.className = `item-card ${isCollapsed ? 'collapsed' : ''}`;
     card.dataset.id = item.id;
     card.innerHTML = `
       <div class="item-card-header" onclick="toggleItemCard(this)">
-        <span class="item-card-title">${item.institution || '新加入学校'} - ${item.degree || '学历'} ${item.major || ''}</span>
+        <span class="item-card-title">${title}</span>
         <div class="item-card-actions" onclick="event.stopPropagation()">
-          <button class="order-btn" title="上移" onclick="moveSubitem('education', ${index}, 'up')">
+          <button class="order-btn" title="上移" onclick="moveSubitem('${sectionType}', ${index}, 'up')">
             <i data-lucide="chevron-up"></i>
           </button>
-          <button class="order-btn" title="下移" onclick="moveSubitem('education', ${index}, 'down')">
+          <button class="order-btn" title="下移" onclick="moveSubitem('${sectionType}', ${index}, 'down')">
             <i data-lucide="chevron-down"></i>
           </button>
-          <button class="btn btn-danger-outline" onclick="deleteSubitem('education', '${item.id}')">
+          <button class="btn btn-danger-outline" onclick="deleteSubitem('${sectionType}', '${item.id}')">
             删除
           </button>
           <i data-lucide="chevron-down" class="chevron-toggle"></i>
@@ -1100,46 +1187,19 @@ function renderEducationForm() {
       </div>
       <div class="item-card-content">
         <div class="form-grid">
-          <div class="input-group">
-            <label>学校 / 机构名称</label>
-            <input type="text" value="${item.institution || ''}" oninput="updateSubitemField('education', '${item.id}', 'institution', this.value, this)">
-          </div>
-          <div class="input-group">
-            <label>学位 / 证书</label>
-            <input type="text" value="${item.degree || ''}" placeholder="例如：学士 / 硕士" oninput="updateSubitemField('education', '${item.id}', 'degree', this.value, this)">
-          </div>
-          <div class="input-group">
-            <label>专业 / 科系</label>
-            <input type="text" value="${item.major || ''}" placeholder="例如：计算机科学" oninput="updateSubitemField('education', '${item.id}', 'major', this.value, this)">
-          </div>
-          <div class="input-group">
-            <label>起止时间</label>
-            <input type="text" value="${item.startDate || ''}" placeholder="例如：2016.09 - 2020.06" oninput="updateSubitemField('education', '${item.id}', 'startDate', this.value)">
-          </div>
-          <div class="input-group full-width">
-            <label>教育背景描述 (选填)</label>
-            <textarea rows="3" placeholder="专业绩点、主修课程、奖学金或在校荣誉等" oninput="updateSubitemField('education', '${item.id}', 'description', this.value)">${item.description || ''}</textarea>
-          </div>
+          ${fieldsHTML}
         </div>
       </div>
     `;
     container.appendChild(card);
   });
 
-  document.getElementById('add-edu-btn').onclick = () => {
-    const id = `edu-${Date.now()}`;
-    state.education.push({
-      id,
-      institution: '',
-      degree: '',
-      major: '',
-      startDate: '',
-      endDate: '',
-      description: ''
-    });
+  document.getElementById(config.addBtnId).onclick = () => {
+    const id = `${config.idPrefix}-${Date.now()}`;
+    state[sectionType].push({ id, ...config.newItem });
     collapsedCards[id] = false;
     saveStateToLocalStorage();
-    renderEducationForm();
+    renderItemListForm(sectionType);
     renderPreview();
   };
 
@@ -1147,150 +1207,10 @@ function renderEducationForm() {
   initAutoExpandingTextareas();
 }
 
-// Projects Forms
-function renderProjectsForm() {
-  const container = document.getElementById('project-items');
-  container.innerHTML = '';
-
-  state.projects.forEach((item, index) => {
-    const isCollapsed = collapsedCards[item.id] !== false;
-
-    const card = document.createElement('div');
-    card.className = `item-card ${isCollapsed ? 'collapsed' : ''}`;
-    card.dataset.id = item.id;
-    card.innerHTML = `
-      <div class="item-card-header" onclick="toggleItemCard(this)">
-        <span class="item-card-title">${item.name || '新项目名称'} - ${item.role || '担任角色'}</span>
-        <div class="item-card-actions" onclick="event.stopPropagation()">
-          <button class="order-btn" title="上移" onclick="moveSubitem('projects', ${index}, 'up')">
-            <i data-lucide="chevron-up"></i>
-          </button>
-          <button class="order-btn" title="下移" onclick="moveSubitem('projects', ${index}, 'down')">
-            <i data-lucide="chevron-down"></i>
-          </button>
-          <button class="btn btn-danger-outline" onclick="deleteSubitem('projects', '${item.id}')">
-            删除
-          </button>
-          <i data-lucide="chevron-down" class="chevron-toggle"></i>
-        </div>
-      </div>
-      <div class="item-card-content">
-        <div class="form-grid">
-          <div class="input-group">
-            <label>项目名称</label>
-            <input type="text" value="${item.name || ''}" oninput="updateSubitemField('projects', '${item.id}', 'name', this.value, this)">
-          </div>
-          <div class="input-group">
-            <label>担任角色</label>
-            <input type="text" value="${item.role || ''}" placeholder="例如：项目负责人 / 核心开发" oninput="updateSubitemField('projects', '${item.id}', 'role', this.value, this)">
-          </div>
-          <div class="input-group">
-            <label>开始时间</label>
-            <input type="text" value="${item.startDate || ''}" placeholder="例如：2025-12" oninput="updateSubitemField('projects', '${item.id}', 'startDate', this.value)">
-          </div>
-          <div class="input-group">
-            <label>结束时间</label>
-            <input type="text" value="${item.endDate || ''}" placeholder="例如：2026-05 或 至今" oninput="updateSubitemField('projects', '${item.id}', 'endDate', this.value)">
-          </div>
-          <div class="input-group full-width">
-            <label>技术栈 (选填)</label>
-            <input type="text" value="${item.techStack || ''}" placeholder="例如：Spring Boot, Redis, Vue3" oninput="updateSubitemField('projects', '${item.id}', 'techStack', this.value)">
-          </div>
-          <div class="input-group full-width">
-            <label>项目链接 (选填)</label>
-            <input type="text" value="${item.link || ''}" placeholder="例如：github.com/username/project" oninput="updateSubitemField('projects', '${item.id}', 'link', this.value)">
-          </div>
-          <div class="input-group full-width">
-            <label>项目描述</label>
-            <textarea rows="4" placeholder="描述该项目背景、您的职责、所用技术及项目成果" oninput="updateSubitemField('projects', '${item.id}', 'description', this.value)">${item.description || ''}</textarea>
-          </div>
-        </div>
-      </div>
-    `;
-    container.appendChild(card);
-  });
-
-  document.getElementById('add-proj-btn').onclick = () => {
-    const id = `proj-${Date.now()}`;
-    state.projects.push({
-      id,
-      name: '',
-      role: '',
-      link: '',
-      startDate: '',
-      endDate: '',
-      techStack: '',
-      description: ''
-    });
-    collapsedCards[id] = false;
-    saveStateToLocalStorage();
-    renderProjectsForm();
-    renderPreview();
-  };
-
-  lucide.createIcons();
-  initAutoExpandingTextareas();
-}
-
-// Skills Forms
-function renderSkillsForm() {
-  const container = document.getElementById('skill-items');
-  container.innerHTML = '';
-
-  state.skills.forEach((item, index) => {
-    const isCollapsed = collapsedCards[item.id] !== false;
-
-    const card = document.createElement('div');
-    card.className = `item-card ${isCollapsed ? 'collapsed' : ''}`;
-    card.dataset.id = item.id;
-    card.innerHTML = `
-      <div class="item-card-header" onclick="toggleItemCard(this)">
-        <span class="item-card-title">${item.category || '新技能分类'}</span>
-        <div class="item-card-actions" onclick="event.stopPropagation()">
-          <button class="order-btn" title="上移" onclick="moveSubitem('skills', ${index}, 'up')">
-            <i data-lucide="chevron-up"></i>
-          </button>
-          <button class="order-btn" title="下移" onclick="moveSubitem('skills', ${index}, 'down')">
-            <i data-lucide="chevron-down"></i>
-          </button>
-          <button class="btn btn-danger-outline" onclick="deleteSubitem('skills', '${item.id}')">
-            删除
-          </button>
-          <i data-lucide="chevron-down" class="chevron-toggle"></i>
-        </div>
-      </div>
-      <div class="item-card-content">
-        <div class="form-grid">
-          <div class="input-group full-width">
-            <label>技能分类名称</label>
-            <input type="text" value="${item.category || ''}" placeholder="例如：编程语言 / 办公软件" oninput="updateSubitemField('skills', '${item.id}', 'category', this.value, this)">
-          </div>
-          <div class="input-group full-width">
-            <label>具体技能标签 (英文逗号分隔)</label>
-            <input type="text" value="${item.tags || ''}" placeholder="例如：JavaScript, TypeScript, React" oninput="updateSubitemField('skills', '${item.id}', 'tags', this.value)">
-          </div>
-        </div>
-      </div>
-    `;
-    container.appendChild(card);
-  });
-
-  document.getElementById('add-skill-btn').onclick = () => {
-    const id = `skill-${Date.now()}`;
-    state.skills.push({
-      id,
-      category: '',
-      tags: ''
-    });
-    collapsedCards[id] = false;
-    saveStateToLocalStorage();
-    renderSkillsForm();
-    renderPreview();
-  };
-
-  lucide.createIcons();
-  initAutoExpandingTextareas();
-}
+function renderExperienceForm() { renderItemListForm('experience'); }
+function renderEducationForm() { renderItemListForm('education'); }
+function renderProjectsForm() { renderItemListForm('projects'); }
+function renderSkillsForm() { renderItemListForm('skills'); }
 
 // Subitems actions logic
 window.updateSubitemField = function(sectionType, id, field, value, inputEl = null) {
@@ -1303,21 +1223,7 @@ window.updateSubitemField = function(sectionType, id, field, value, inputEl = nu
     if (inputEl) {
       const card = inputEl.closest('.item-card');
       const titleEl = card.querySelector('.item-card-title');
-      if (sectionType === 'experience') {
-        const comp = card.querySelector('input[oninput*="company"]').value || '新加入公司';
-        const role = card.querySelector('input[oninput*="role"]').value || '新职位';
-        titleEl.textContent = `${comp} - ${role}`;
-      } else if (sectionType === 'education') {
-        const inst = card.querySelector('input[oninput*="institution"]').value || '新加入学校';
-        const deg = card.querySelector('input[oninput*="degree"]').value || '学历';
-        titleEl.textContent = `${inst} - ${deg}`;
-      } else if (sectionType === 'projects') {
-        const name = card.querySelector('input[oninput*="name"]').value || '新项目名称';
-        const role = card.querySelector('input[oninput*="role"]').value || '担任角色';
-        titleEl.textContent = `${name} - ${role}`;
-      } else if (sectionType === 'skills') {
-        titleEl.textContent = value || '新技能分类';
-      }
+      if (titleEl) titleEl.textContent = getCardTitle(sectionType, item);
     }
     
     // Sync to preview element instead of full redraw (except for tags which requires badge rebuilding)
@@ -1335,13 +1241,7 @@ window.deleteSubitem = function(sectionType, id) {
     state[sectionType] = state[sectionType].filter(i => i.id !== id);
     if (collapsedCards[id] !== undefined) delete collapsedCards[id];
     saveStateToLocalStorage();
-    
-    // Refresh respective form view and document preview
-    if (sectionType === 'experience') renderExperienceForm();
-    else if (sectionType === 'education') renderEducationForm();
-    else if (sectionType === 'projects') renderProjectsForm();
-    else if (sectionType === 'skills') renderSkillsForm();
-    
+    renderItemListForm(sectionType);
     renderPreview();
   }
 };
@@ -1363,12 +1263,7 @@ window.moveSubitem = function(sectionType, index, direction) {
   });
 
   saveStateToLocalStorage();
-
-  if (sectionType === 'experience') renderExperienceForm();
-  else if (sectionType === 'education') renderEducationForm();
-  else if (sectionType === 'projects') renderProjectsForm();
-  else if (sectionType === 'skills') renderSkillsForm();
-
+  renderItemListForm(sectionType);
   renderPreview();
 };
 
@@ -1407,8 +1302,7 @@ function measureContentHeight(htmlContent, columnClass = '') {
   measureDiv.className = `resume-page ${state.theme} ${state.font} ${state.spacing} template-${state.template}`;
   
   // Set padding top/bottom to 0 so we only measure content height, and prevent margin collapsing via flow-root
-  const spacingMap = { 'spacing-compact': 16, 'spacing-normal': 20, 'spacing-comfortable': 26 };
-  const pad = spacingMap[state.spacing] || 30;
+  const pad = getSpacingPad();
   
   measureDiv.style.cssText = `
     position: absolute;
@@ -1454,8 +1348,7 @@ function measureContentHeight(htmlContent, columnClass = '') {
 
 // Get page content height in pixels (A4 = 297mm, minus padding)
 function getPageContentHeight() {
-  const spacingMap = { 'spacing-compact': 16, 'spacing-normal': 20, 'spacing-comfortable': 26 };
-  const pad = spacingMap[state.spacing] || 30;
+  const pad = getSpacingPad();
   return 1123 - (pad * 2); // 297mm ≈ 1123px at 96 DPI
 }
 
@@ -1477,103 +1370,16 @@ function paginateContent(headerHTML, sectionsHTML) {
     return paginateComplexLayout(headerHTML, sectionsHTML, headerHeight, pageContentHeight, continuationHeaderHeight);
   }
 
-  // Parse sections from HTML string
+  // Single-column: parse sections and delegate to shared pagination helper
   const tempDiv = document.createElement('div');
   tempDiv.innerHTML = sectionsHTML;
   const sectionEls = Array.from(tempDiv.querySelectorAll('.resume-section'));
 
-  // If no sections found, treat as single block
   if (sectionEls.length === 0) {
-    const totalHeight = headerHeight + measureContentHeight(sectionsHTML);
-    if (totalHeight <= pageContentHeight) {
-      return [{ header: headerHTML, body: sectionsHTML }];
-    }
     return [{ header: headerHTML, body: sectionsHTML }];
   }
 
-  // One-column layout: paginate at section level
-  const pages = [];
-  let currentPageSections = [];
-  let currentHeight = headerHeight;
-
-  for (const section of sectionEls) {
-    const sectionHTML = section.outerHTML;
-    const sectionHeight = measureContentHeight(sectionHTML);
-
-    // If section fits on current page
-    if (currentHeight + sectionHeight <= pageContentHeight) {
-      currentPageSections.push(sectionHTML);
-      currentHeight += sectionHeight;
-      continue;
-    }
-
-    // Section doesn't fit — try splitting its items
-    const items = section.querySelectorAll('.resume-item, .resume-skill-cat');
-
-    if (items.length === 0) {
-      // Cannot split this section (e.g. summary). Just move it to the next page.
-      if (currentPageSections.length > 0) {
-        pages.push(currentPageSections);
-        currentPageSections = [];
-        currentHeight = continuationHeaderHeight; // Subsequent pages start with continuation header height
-      }
-      currentPageSections.push(sectionHTML);
-      currentHeight += sectionHeight;
-      continue;
-    }
-
-    const titleEl = section.querySelector('.resume-section-title');
-    const titleHTML = titleEl ? titleEl.outerHTML : '';
-    const titleHeight = titleHTML ? measureContentHeight(titleHTML) : 0;
-    const sectionClass = section.className;
-
-    // Check if the title + first item can fit on the current page.
-    const firstItem = items[0];
-    const firstItemHeight = firstItem ? measureContentHeight(firstItem.outerHTML) : 0;
-    const canStartOnCurrentPage = (currentHeight + titleHeight + firstItemHeight <= pageContentHeight);
-
-    // Save current page if we can't start on it
-    if (!canStartOnCurrentPage && currentPageSections.length > 0) {
-      pages.push(currentPageSections);
-      currentPageSections = [];
-      currentHeight = continuationHeaderHeight;
-    }
-
-    // Try to fit items one by one
-    let itemGroup = [];
-    let itemGroupHeight = currentHeight + titleHeight; // Account for current page height and section title
-
-    for (const item of items) {
-      const itemHTML = item.outerHTML;
-      const itemHeight = measureContentHeight(itemHTML);
-
-      if (itemGroupHeight + itemHeight > pageContentHeight && itemGroup.length > 0) {
-        // Flush current item group to a page
-        currentPageSections.push(
-          `<section class="${sectionClass}">${titleHTML}<div class="resume-items-list">${itemGroup.join('')}</div></section>`
-        );
-        pages.push(currentPageSections);
-        currentPageSections = [];
-        itemGroup = [];
-        itemGroupHeight = continuationHeaderHeight + titleHeight; // Reset for new page with continuation header
-      }
-
-      itemGroup.push(itemHTML);
-      itemGroupHeight += itemHeight;
-    }
-
-    // Remaining items in this section
-    if (itemGroup.length > 0) {
-      currentPageSections.push(
-        `<section class="${sectionClass}">${titleHTML}<div class="resume-items-list">${itemGroup.join('')}</div></section>`
-      );
-      currentHeight = itemGroupHeight;
-    }
-  }
-
-  if (currentPageSections.length > 0) {
-    pages.push(currentPageSections);
-  }
+  const pages = paginateSectionsIntoPages(sectionEls, headerHeight, pageContentHeight, continuationHeaderHeight, '');
 
   return pages.map((sections, i) => ({
     header: i === 0 ? headerHTML : '',
@@ -1776,16 +1582,7 @@ function renderPreview() {
     const sideSections = state.sectionOrder.filter(s => (state.sectionColumns[s] || 'left') === 'right');
     const p = state.personal;
     const avatarHTML = p.avatar ? `<div class="avatar-container"><img src="${p.avatar}" alt="${p.name}" class="avatar-img" onerror="this.style.display='none'"></div>` : '';
-    let contactsList = [];
-    if (p.age) contactsList.push(`<div class="contact-item"><i data-lucide="calendar"></i><span contenteditable="true" data-path="personal.age">${p.age}</span></div>`);
-    if (p.gender) contactsList.push(`<div class="contact-item"><i data-lucide="user"></i><span contenteditable="true" data-path="personal.gender">${p.gender}</span></div>`);
-    if (p.arrivalTime) contactsList.push(`<div class="contact-item"><i data-lucide="clock"></i><span contenteditable="true" data-path="personal.arrivalTime">${p.arrivalTime}</span></div>`);
-    if (p.phone) contactsList.push(`<div class="contact-item"><i data-lucide="phone"></i><span contenteditable="true" data-path="personal.phone">${p.phone}</span></div>`);
-    if (p.email) contactsList.push(`<div class="contact-item"><i data-lucide="mail"></i><span contenteditable="true" data-path="personal.email">${p.email}</span></div>`);
-    if (p.location) contactsList.push(`<div class="contact-item"><i data-lucide="map-pin"></i><span contenteditable="true" data-path="personal.location">${p.location}</span></div>`);
-    if (p.website) contactsList.push(`<div class="contact-item"><i data-lucide="globe"></i><span contenteditable="true" data-path="personal.website">${p.website}</span></div>`);
-    if (p.github) contactsList.push(`<div class="contact-item"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-github"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"></path><path d="M9 18c-4.51 2-5-2-7-2"></path></svg><span contenteditable="true" data-path="personal.github">${p.github}</span></div>`);
-    if (p.linkedin) contactsList.push(`<div class="contact-item"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-linkedin"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path><rect x="2" y="9" width="4" height="12"></rect><circle cx="4" cy="4" r="2"></circle></svg><span contenteditable="true" data-path="personal.linkedin">${p.linkedin}</span></div>`);
+    const contactsList = buildContactItems(p, 'icon');
     bodyHTML = `<div class="resume-body">
       <div class="sidebar-col">${avatarHTML}<div class="sidebar-contacts">${contactsList.join('')}</div>${renderSectionsHTML(sideSections)}</div>
       <div class="main-col"><h1 class="resume-name" contenteditable="true" data-path="personal.name">${p.name || ''}</h1><div class="resume-title" contenteditable="true" data-path="personal.title">${p.title || ''}</div>${renderSectionsHTML(mainSections)}</div>
@@ -1829,20 +1626,8 @@ function renderHeaderTemplate() {
     </div>
   ` : '';
 
-  // Contacts lists assembler
-  let contactsList = [];
-  
-  if (p.age) contactsList.push(`<div class="contact-item"><i data-lucide="calendar"></i><span contenteditable="true" data-path="personal.age">${p.age}</span></div>`);
-  if (p.gender) contactsList.push(`<div class="contact-item"><i data-lucide="user"></i><span contenteditable="true" data-path="personal.gender">${p.gender}</span></div>`);
-  if (p.arrivalTime) contactsList.push(`<div class="contact-item"><i data-lucide="clock"></i><span contenteditable="true" data-path="personal.arrivalTime">${p.arrivalTime}</span></div>`);
-  if (p.phone) contactsList.push(`<div class="contact-item"><i data-lucide="phone"></i><span contenteditable="true" data-path="personal.phone">${p.phone}</span></div>`);
-  if (p.email) contactsList.push(`<div class="contact-item"><i data-lucide="mail"></i><span contenteditable="true" data-path="personal.email">${p.email}</span></div>`);
-  if (p.location) contactsList.push(`<div class="contact-item"><i data-lucide="map-pin"></i><span contenteditable="true" data-path="personal.location">${p.location}</span></div>`);
-  if (p.website) contactsList.push(`<div class="contact-item"><i data-lucide="globe"></i><span contenteditable="true" data-path="personal.website">${p.website}</span></div>`);
-  if (p.github) contactsList.push(`<div class="contact-item"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-github"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"></path><path d="M9 18c-4.51 2-5-2-7-2"></path></svg><span contenteditable="true" data-path="personal.github">${p.github}</span></div>`);
-  if (p.linkedin) contactsList.push(`<div class="contact-item"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-linkedin"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path><rect x="2" y="9" width="4" height="12"></rect><circle cx="4" cy="4" r="2"></circle></svg><span contenteditable="true" data-path="personal.linkedin">${p.linkedin}</span></div>`);
-
   if (state.template === 'modern') {
+    const contactsList = buildContactItems(p, 'icon');
     return `
       <header class="resume-header">
         <div class="header-info-main">
@@ -1856,6 +1641,7 @@ function renderHeaderTemplate() {
       </header>
     `;
   } else if (state.template === 'elegant') {
+    const contactsList = buildContactItems(p, 'icon');
     const hasAvatarClass = p.avatar ? 'has-avatar' : 'no-avatar';
     return `
       <header class="resume-header ${hasAvatarClass}">
@@ -1870,17 +1656,7 @@ function renderHeaderTemplate() {
       </header>
     `;
   } else if (state.template === 'geek') {
-    let geekContacts = [];
-    if (p.age) geekContacts.push(`<div class="contact-item"><span class="contact-label">年 龄：</span><span contenteditable="true" data-path="personal.age">${p.age}</span></div>`);
-    if (p.gender) geekContacts.push(`<div class="contact-item"><span class="contact-label">性 别：</span><span contenteditable="true" data-path="personal.gender">${p.gender}</span></div>`);
-    if (p.phone) geekContacts.push(`<div class="contact-item"><span class="contact-label">电 话：</span><span contenteditable="true" data-path="personal.phone">${p.phone}</span></div>`);
-    if (p.email) geekContacts.push(`<div class="contact-item"><span class="contact-label">邮 箱：</span><span contenteditable="true" data-path="personal.email">${p.email}</span></div>`);
-    if (p.location) geekContacts.push(`<div class="contact-item"><span class="contact-label">地 区：</span><span contenteditable="true" data-path="personal.location">${p.location}</span></div>`);
-    if (p.arrivalTime) geekContacts.push(`<div class="contact-item"><span class="contact-label">到 岗：</span><span contenteditable="true" data-path="personal.arrivalTime">${p.arrivalTime}</span></div>`);
-    if (p.github) geekContacts.push(`<div class="contact-item"><span class="contact-label">GitHub：</span><span contenteditable="true" data-path="personal.github">${p.github}</span></div>`);
-    if (p.linkedin) geekContacts.push(`<div class="contact-item"><span class="contact-label">LinkedIn：</span><span contenteditable="true" data-path="personal.linkedin">${p.linkedin}</span></div>`);
-    if (p.website) geekContacts.push(`<div class="contact-item"><span class="contact-label">网 站：</span><span contenteditable="true" data-path="personal.website">${p.website}</span></div>`);
-
+    const geekContacts = buildContactItems(p, 'label');
     return `
       <header class="resume-header geek-header">
         <div class="header-info-main">
@@ -1894,6 +1670,7 @@ function renderHeaderTemplate() {
       </header>
     `;
   } else if (state.template === 'minimal') {
+    const contactsList = buildContactItems(p, 'icon');
     return `
       <header class="resume-header">
         <div class="header-info-main">
@@ -2149,21 +1926,7 @@ function syncPreviewToStateAndEditor(path, value) {
         
         const titleEl = card.querySelector('.item-card-title');
         if (titleEl) {
-          if (sectionType === 'experience') {
-            const comp = state.experience.find(i => i.id === id).company || '新加入公司';
-            const role = state.experience.find(i => i.id === id).role || '新职位';
-            titleEl.textContent = `${comp} - ${role}`;
-          } else if (sectionType === 'education') {
-            const inst = state.education.find(i => i.id === id).institution || '新加入学校';
-            const deg = state.education.find(i => i.id === id).degree || '学历';
-            titleEl.textContent = `${inst} - ${deg}`;
-          } else if (sectionType === 'projects') {
-            const name = state.projects.find(i => i.id === id).name || '新项目名称';
-            const role = state.projects.find(i => i.id === id).role || '担任角色';
-            titleEl.textContent = `${name} - ${role}`;
-          } else if (sectionType === 'skills') {
-            titleEl.textContent = value || '新技能分类';
-          }
+          titleEl.textContent = getCardTitle(sectionType, item);
         }
       }
     }
