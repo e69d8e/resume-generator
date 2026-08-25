@@ -299,20 +299,38 @@ document.addEventListener('DOMContentLoaded', () => {
   initApp();
 });
 
+function setSyncStatus(isSyncing) {
+  const indicator = document.querySelector('.status-indicator');
+  if (!indicator) return;
+  const pulseDot = indicator.querySelector('.pulse-dot');
+  const label = indicator.querySelector('span:not(.pulse-dot)');
+  if (isSyncing) {
+    if (pulseDot) pulseDot.classList.add('syncing');
+    if (label) label.textContent = '同步中...';
+  } else {
+    if (pulseDot) pulseDot.classList.remove('syncing');
+    if (label) label.textContent = '实时同步中';
+  }
+}
+
 let debounceSaveTimeout;
 function saveStateToLocalStorageDebounced() {
+  setSyncStatus(true);
   clearTimeout(debounceSaveTimeout);
   debounceSaveTimeout = setTimeout(() => {
     saveStateToLocalStorage();
+    setSyncStatus(false);
   }, 300);
 }
 
 let debounceRenderTimeout;
 function renderPreviewDebounced() {
+  setSyncStatus(true);
   clearTimeout(debounceRenderTimeout);
   debounceRenderTimeout = setTimeout(() => {
     renderPreview();
-  }, 400);
+    setSyncStatus(false);
+  }, 350);
 }
 
 function initApp() {
@@ -505,6 +523,48 @@ function initAvatarUpload() {
     fileInput.click();
   });
 
+  // Drag and drop image file directly onto avatar area
+  area.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    area.classList.add('drag-active');
+  });
+
+  area.addEventListener('dragleave', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    area.classList.remove('drag-active');
+  });
+
+  area.addEventListener('drop', async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    area.classList.remove('drag-active');
+    
+    if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]) {
+      const file = e.dataTransfer.files[0];
+      if (file.type.startsWith('image/')) {
+        try {
+          const rawDataUrl = await resizeImage(file, 1024);
+          const croppedUrl = await showCropModal(rawDataUrl);
+          if (croppedUrl) {
+            state.personal.avatar = croppedUrl;
+            previewImg.src = croppedUrl;
+            removeBtn.style.display = 'flex';
+            if (urlInput) urlInput.value = '';
+            saveStateToLocalStorageDebounced();
+            syncEditorToPreview('personal.avatar', croppedUrl);
+            renderPreviewDebounced();
+            showToast('头像已更新');
+          }
+        } catch (err) {
+          console.error('Avatar drag upload failed:', err);
+          showToast('头像上传失败', 'error');
+        }
+      }
+    }
+  });
+
   // File selected → crop modal → update state
   fileInput.addEventListener('change', async (e) => {
     const file = e.target.files[0];
@@ -520,9 +580,11 @@ function initAvatarUpload() {
         saveStateToLocalStorageDebounced();
         syncEditorToPreview('personal.avatar', croppedUrl);
         renderPreviewDebounced();
+        showToast('头像已更新');
       }
     } catch (err) {
       console.error('Avatar upload failed:', err);
+      showToast('头像上传失败', 'error');
     }
     fileInput.value = '';
   });
@@ -537,6 +599,7 @@ function initAvatarUpload() {
     saveStateToLocalStorageDebounced();
     syncEditorToPreview('personal.avatar', '');
     renderPreviewDebounced();
+    showToast('头像已移除');
   });
 
   // URL fallback input
@@ -901,6 +964,24 @@ function bindCustomizerControls() {
   zoomText.addEventListener('focus', () => {
     zoomText.select();
   });
+
+  // Ctrl/Cmd + Wheel to smoothly zoom in/out
+  const previewPanel = document.querySelector('.preview-panel');
+  if (previewPanel) {
+    previewPanel.addEventListener('wheel', (e) => {
+      if (e.ctrlKey || e.metaKey) {
+        e.preventDefault();
+        fitScreenMode = false;
+        btnFit.classList.remove('active');
+        if (e.deltaY < 0) {
+          zoom = Math.min(1.5, zoom + 0.05);
+        } else {
+          zoom = Math.max(0.4, zoom - 0.05);
+        }
+        updateZoom();
+      }
+    }, { passive: false });
+  }
 }
 
 function bindActions() {
@@ -1318,12 +1399,41 @@ window.updateSubitemField = function(sectionType, id, field, value, inputEl = nu
 };
 
 window.deleteSubitem = function(sectionType, id) {
-      if (confirm('确定要删除此模块吗？')) {
-    state[sectionType] = state[sectionType].filter(i => i.id !== id);
-    if (collapsedCards[id] !== undefined) delete collapsedCards[id];
-    saveStateToLocalStorage();
-    renderItemListForm(sectionType);
-    renderPreview();
+  const card = document.querySelector(`.item-card[data-id="${id}"]`);
+  const item = state[sectionType].find(i => i.id === id);
+  const itemName = item ? (item.company || item.institution || item.name || item.category || '该条目') : '该条目';
+
+  if (confirm(`确定要删除 "${itemName}" 吗？`)) {
+    if (card) {
+      card.style.transition = 'opacity 0.2s ease, transform 0.2s ease, max-height 0.25s ease, margin 0.25s ease, padding 0.25s ease';
+      card.style.opacity = '0';
+      card.style.transform = 'scale(0.96) translateY(-6px)';
+      card.style.maxHeight = card.offsetHeight + 'px';
+      
+      setTimeout(() => {
+        card.style.maxHeight = '0px';
+        card.style.marginBottom = '0px';
+        card.style.paddingTop = '0px';
+        card.style.paddingBottom = '0px';
+        card.style.overflow = 'hidden';
+      }, 20);
+
+      setTimeout(() => {
+        state[sectionType] = state[sectionType].filter(i => i.id !== id);
+        if (collapsedCards[id] !== undefined) delete collapsedCards[id];
+        saveStateToLocalStorage();
+        renderItemListForm(sectionType);
+        renderPreview();
+        showToast('已删除');
+      }, 240);
+    } else {
+      state[sectionType] = state[sectionType].filter(i => i.id !== id);
+      if (collapsedCards[id] !== undefined) delete collapsedCards[id];
+      saveStateToLocalStorage();
+      renderItemListForm(sectionType);
+      renderPreview();
+      showToast('已删除');
+    }
   }
 };
 
