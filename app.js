@@ -6,9 +6,6 @@
 // CONSTANTS & CONFIGURATION
 // ==========================================
 
-const GITHUB_SVG = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-github"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"></path><path d="M9 18c-4.51 2-5-2-7-2"></path></svg>';
-const LINKEDIN_SVG = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-linkedin"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path><rect x="2" y="9" width="4" height="12"></rect><circle cx="4" cy="4" r="2"></circle></svg>';
-
 const DEFAULT_SECTION_COLUMNS = { summary: 'left', experience: 'left', projects: 'left', skills: 'right', education: 'right' };
 const SPACING_MAP = { 'spacing-compact': 16, 'spacing-normal': 20, 'spacing-comfortable': 26 };
 const SECTION_NAMES = { summary: '自我评价', experience: '工作经历', projects: '项目经验', education: '教育背景', skills: '专业技能' };
@@ -77,21 +74,21 @@ function showToast(message, type = 'success') {
     container.id = 'toast-container';
     document.body.appendChild(container);
   }
-  
+
   const toast = document.createElement('div');
   toast.className = `toast toast-${type}`;
-  
+
   let iconName = 'check-circle';
   if (type === 'error') iconName = 'alert-triangle';
   else if (type === 'info') iconName = 'info';
-  
+
   toast.innerHTML = `
     <i data-lucide="${iconName}" class="toast-icon"></i>
     <span>${message}</span>
   `;
-  
+
   container.appendChild(toast);
-  lucide.createIcons();
+  refreshIcons();
   
   setTimeout(() => {
     toast.classList.add('show');
@@ -105,11 +102,23 @@ function showToast(message, type = 'success') {
   }, 3000);
 }
 
+// Debounced Lucide icon refresh — batches rapid DOM updates into a single scan
+let _lucideRefreshTimeout;
+function refreshIcons() {
+  clearTimeout(_lucideRefreshTimeout);
+  _lucideRefreshTimeout = setTimeout(() => lucide.createIcons(), 50);
+}
+
 function getCardTitle(sectionType, item) {
   return CARD_TITLE_CONFIG[sectionType].map(part =>
     Array.isArray(part) ? (item[part[0]] || part[1]) : part
   ).join('');
 }
+
+const BRAND_ICONS = {
+  github: `<svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="contact-icon-svg"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg>`,
+  linkedin: `<svg viewBox="0 0 24 24" width="12" height="12" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" class="contact-icon-svg"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path><rect x="2" y="9" width="4" height="12"></rect><circle cx="4" cy="4" r="2"></circle></svg>`
+};
 
 function buildContactItems(p, format) {
   const items = [];
@@ -125,13 +134,15 @@ function buildContactItems(p, format) {
   } else {
     const iconContacts = [
       ['age', 'calendar'], ['gender', 'user'], ['arrivalTime', 'clock'],
-      ['phone', 'phone'], ['email', 'mail'], ['location', 'map-pin'], ['website', 'globe']
+      ['phone', 'phone'], ['email', 'mail'], ['location', 'map-pin'], ['website', 'globe'],
+      ['github', 'github'], ['linkedin', 'linkedin']
     ];
     iconContacts.forEach(([field, icon]) => {
-      if (p[field]) items.push(`<div class="contact-item"><i data-lucide="${icon}"></i><span contenteditable="true" data-path="personal.${field}">${p[field]}</span></div>`);
+      if (p[field]) {
+        const iconHTML = BRAND_ICONS[field] || `<i data-lucide="${icon}"></i>`;
+        items.push(`<div class="contact-item">${iconHTML}<span contenteditable="true" data-path="personal.${field}">${p[field]}</span></div>`);
+      }
     });
-    if (p.github) items.push(`<div class="contact-item">${GITHUB_SVG}<span contenteditable="true" data-path="personal.github">${p.github}</span></div>`);
-    if (p.linkedin) items.push(`<div class="contact-item">${LINKEDIN_SVG}<span contenteditable="true" data-path="personal.linkedin">${p.linkedin}</span></div>`);
   }
   return items;
 }
@@ -355,7 +366,7 @@ function initTabs() {
       }
       
       // Re-run Lucide in case tabs had unrendered icons
-      lucide.createIcons();
+      refreshIcons();
     });
   });
 }
@@ -431,7 +442,11 @@ function setupPreviewEditableListener() {
 
 // Toggle collapsible card handler
 window.toggleCard = window.toggleItemCard = function(headerElement) {
-  headerElement.parentElement.classList.toggle('collapsed');
+  const card = headerElement.parentElement;
+  card.classList.toggle('collapsed');
+  // Track state so it survives re-renders
+  const id = card.dataset.id;
+  if (id) collapsedCards[id] = card.classList.contains('collapsed');
 };
 
 // ==========================================
@@ -585,7 +600,9 @@ function showCropModal(imageDataUrl) {
 
     const isGeek = state.template === 'geek';
     const isMinimal = state.template === 'minimal';
-    const isCircular = !isGeek && !isMinimal;
+    const isCreative = state.template === 'creative';
+    const isCompact = state.template === 'compact';
+    const isCircular = !isGeek && !isMinimal && !isCompact;
 
     let vpW = 240;
     let vpH = 240;
@@ -769,7 +786,7 @@ function showCropModal(imageDataUrl) {
 
     // Show modal
     modal.style.display = 'flex';
-    lucide.createIcons();
+    refreshIcons();
   });
 }
 
@@ -961,7 +978,7 @@ function bindActions() {
 
     // Show loading state
     btn.innerHTML = '<i data-lucide="loader" class="animate-spin" style="margin-right:6px;"></i><span>正在导出...</span>';
-    lucide.createIcons();
+    refreshIcons();
 
     try {
       await new Promise(r => setTimeout(r, 150)); // Let browser settle
@@ -999,7 +1016,7 @@ function bindActions() {
       });
       container.style.transform = originalTransform;
       btn.innerHTML = originalHTML;
-      lucide.createIcons();
+      refreshIcons();
     }
   }
 
@@ -1096,8 +1113,8 @@ function renderSortableSections() {
 
     container.appendChild(item);
   });
-  
-  lucide.createIcons();
+
+  refreshIcons();
 }
 
 // HTML5 Drag & Drop callbacks
@@ -1187,7 +1204,7 @@ function renderItemListForm(sectionType) {
   container.innerHTML = '';
 
   state[sectionType].forEach((item, index) => {
-    const isCollapsed = collapsedCards[item.id] !== false;
+    const isCollapsed = collapsedCards[item.id] === true;
     const title = getCardTitle(sectionType, item);
 
     const fieldsHTML = config.fields.map(f => {
@@ -1245,7 +1262,7 @@ function renderItemListForm(sectionType) {
     renderPreview();
   };
 
-  lucide.createIcons();
+  refreshIcons();
   initAutoExpandingTextareas();
 }
 
@@ -1397,19 +1414,32 @@ function getPageContentHeight() {
 // Paginate sections: keep section title with first item, never split items
 function paginateContent(headerHTML, sectionsHTML) {
   const pageContentHeight = getPageContentHeight();
-  const headerHeight = measureContentHeight(headerHTML);
-  
+
+  // Measurement cache: avoids repeated DOM insert/remove for identical HTML
+  const measureCache = new Map();
+  function cachedMeasure(html, colClass) {
+    const key = html.length + '|' + (colClass || '') + '|' + html.slice(0, 200);
+    let h = measureCache.get(key);
+    if (h === undefined) {
+      h = measureContentHeight(html, colClass);
+      measureCache.set(key, h);
+    }
+    return h;
+  }
+
+  const headerHeight = cachedMeasure(headerHTML);
+
   // Calculate continuation header height for subsequent pages
   const continuationHeaderHTML = `<div class="resume-continuation-header"><span class="continuation-name">${state.personal.name || ''}</span><span class="continuation-divider">·</span><span class="continuation-page">第 2 页</span></div>`;
-  const continuationHeaderHeight = measureContentHeight(continuationHeaderHTML);
+  const continuationHeaderHeight = cachedMeasure(continuationHeaderHTML);
 
   // Route two-column templates explicitly to prevent layout flattening
   if (state.template === 'modern' || state.template === 'sidebar') {
-    const totalHeight = headerHeight + measureContentHeight(sectionsHTML);
-    if (totalHeight <= pageContentHeight) {
+    const sectionsHeight = cachedMeasure(sectionsHTML);
+    if (headerHeight + sectionsHeight <= pageContentHeight) {
       return [{ header: headerHTML, body: sectionsHTML }];
     }
-    return paginateComplexLayout(headerHTML, sectionsHTML, headerHeight, pageContentHeight, continuationHeaderHeight);
+    return paginateComplexLayout(headerHTML, sectionsHTML, headerHeight, sectionsHeight, pageContentHeight, continuationHeaderHeight, cachedMeasure);
   }
 
   // Single-column: parse sections and delegate to shared pagination helper
@@ -1421,7 +1451,7 @@ function paginateContent(headerHTML, sectionsHTML) {
     return [{ header: headerHTML, body: sectionsHTML }];
   }
 
-  const pages = paginateSectionsIntoPages(sectionEls, headerHeight, pageContentHeight, continuationHeaderHeight, '');
+  const pages = paginateSectionsIntoPages(sectionEls, headerHeight, pageContentHeight, continuationHeaderHeight, '', cachedMeasure);
 
   return pages.map((sections, i) => ({
     header: i === 0 ? headerHTML : '',
@@ -1430,10 +1460,9 @@ function paginateContent(headerHTML, sectionsHTML) {
 }
 
 // Handle complex (two-column) layouts
-function paginateComplexLayout(headerHTML, bodyHTML, headerHeight, pageContentHeight, continuationHeaderHeight) {
-  const totalHeight = headerHeight + measureContentHeight(bodyHTML);
-
-  if (totalHeight <= pageContentHeight) {
+function paginateComplexLayout(headerHTML, bodyHTML, headerHeight, sectionsHeight, pageContentHeight, continuationHeaderHeight, cachedMeasure) {
+  // sectionsHeight already measured in paginateContent — no redundant measurement needed
+  if (headerHeight + sectionsHeight <= pageContentHeight) {
     return [{ header: headerHTML, body: bodyHTML }];
   }
 
@@ -1455,25 +1484,26 @@ function paginateComplexLayout(headerHTML, bodyHTML, headerHeight, pageContentHe
   // Measure static headers of each column (e.g. name/title or avatar/contacts that are not sections)
   const mainColClone = mainCol.cloneNode(true);
   mainColClone.querySelectorAll('.resume-section').forEach(el => el.remove());
-  const mainColHeaderHeight = measureContentHeight(mainColClone.innerHTML, 'main-col');
+  const mainColHeaderHeight = cachedMeasure(mainColClone.innerHTML, 'main-col');
 
   let sideColHeaderHeight = 0;
   if (sideCol) {
     const sideColClone = sideCol.cloneNode(true);
     sideColClone.querySelectorAll('.resume-section').forEach(el => el.remove());
-    sideColHeaderHeight = measureContentHeight(sideColClone.innerHTML, state.template === 'sidebar' ? 'sidebar-col' : 'side-col');
+    sideColHeaderHeight = cachedMeasure(sideColClone.innerHTML, state.template === 'sidebar' ? 'sidebar-col' : 'side-col');
   }
 
   // Paginate main column (headerHeight is only added to the first page's initial height)
-  const mainPages = paginateSectionsIntoPages(mainSections, headerHeight + mainColHeaderHeight, pageContentHeight, continuationHeaderHeight, 'main-col');
+  const mainPages = paginateSectionsIntoPages(mainSections, headerHeight + mainColHeaderHeight, pageContentHeight, continuationHeaderHeight, 'main-col', cachedMeasure);
 
   // Paginate side column
   const sidePages = paginateSectionsIntoPages(
-    sideSections, 
-    headerHeight + sideColHeaderHeight, 
-    pageContentHeight, 
+    sideSections,
+    headerHeight + sideColHeaderHeight,
+    pageContentHeight,
     continuationHeaderHeight,
-    state.template === 'sidebar' ? 'sidebar-col' : 'side-col'
+    state.template === 'sidebar' ? 'sidebar-col' : 'side-col',
+    cachedMeasure
   );
 
   // Combine into pages
@@ -1509,14 +1539,14 @@ function paginateComplexLayout(headerHTML, bodyHTML, headerHeight, pageContentHe
 
 // Helper: paginate an array of section elements into page arrays
 // Splits sections by individual items when a section doesn't fit
-function paginateSectionsIntoPages(sectionEls, initialHeight, pageContentHeight, continuationHeaderHeight, columnClass) {
+function paginateSectionsIntoPages(sectionEls, initialHeight, pageContentHeight, continuationHeaderHeight, columnClass, cachedMeasure) {
   const pages = [];
   let currentPage = [];
   let currentHeight = initialHeight;
 
   for (const section of sectionEls) {
     const sectionHTML = section.outerHTML;
-    const sectionHeight = measureContentHeight(sectionHTML, columnClass);
+    const sectionHeight = cachedMeasure(sectionHTML, columnClass);
 
     // If section fits on current page, add it whole
     if (currentHeight + sectionHeight <= pageContentHeight) {
@@ -1542,12 +1572,12 @@ function paginateSectionsIntoPages(sectionEls, initialHeight, pageContentHeight,
 
     const titleEl = section.querySelector('.resume-section-title');
     const titleHTML = titleEl ? titleEl.outerHTML : '';
-    const titleHeight = titleHTML ? measureContentHeight(titleHTML, columnClass) : 0;
+    const titleHeight = titleHTML ? cachedMeasure(titleHTML, columnClass) : 0;
     const sectionClass = section.className;
 
     // Check if the title + first item can fit on the current page.
     const firstItem = items[0];
-    const firstItemHeight = firstItem ? measureContentHeight(firstItem.outerHTML, columnClass) : 0;
+    const firstItemHeight = firstItem ? cachedMeasure(firstItem.outerHTML, columnClass) : 0;
     const canStartOnCurrentPage = (currentHeight + titleHeight + firstItemHeight <= pageContentHeight);
 
     // Save current page if we can't start on it
@@ -1563,7 +1593,7 @@ function paginateSectionsIntoPages(sectionEls, initialHeight, pageContentHeight,
 
     for (const item of items) {
       const itemHTML = item.outerHTML;
-      const itemHeight = measureContentHeight(itemHTML, columnClass);
+      const itemHeight = cachedMeasure(itemHTML, columnClass);
 
       if (itemGroupHeight + itemHeight > pageContentHeight && itemGroup.length > 0) {
         // Flush current item group to a page
@@ -1654,7 +1684,7 @@ function renderPreview() {
     container.appendChild(pageDiv);
   });
 
-  lucide.createIcons();
+  refreshIcons();
   updatePageCountBadge(pages.length);
 }
 
@@ -1725,176 +1755,187 @@ function renderHeaderTemplate() {
         ${avatarHTML}
       </header>
     `;
+  } else if (state.template === 'creative') {
+    const contactsList = buildContactItems(p, 'icon');
+    return `
+      <header class="resume-header creative-header">
+        <div class="creative-header-content">
+          ${avatarHTML}
+          <div class="header-info-main">
+            <div class="creative-name-wrap">
+              <h1 class="resume-name" contenteditable="true" data-path="personal.name">${p.name || ''}</h1>
+              <div class="resume-title" contenteditable="true" data-path="personal.title">${p.title || ''}</div>
+            </div>
+            <div class="header-contacts">
+              ${contactsList.join('')}
+            </div>
+          </div>
+        </div>
+      </header>
+    `;
+  } else if (state.template === 'compact') {
+    const contactsList = buildContactItems(p, 'icon');
+    const hasAvatarClass = p.avatar ? 'has-avatar' : 'no-avatar';
+    return `
+      <header class="resume-header compact-header ${hasAvatarClass}">
+        <div class="compact-header-top">
+          <div class="header-info-main">
+            <h1 class="resume-name" contenteditable="true" data-path="personal.name">${p.name || ''}</h1>
+            <div class="resume-title" contenteditable="true" data-path="personal.title">${p.title || ''}</div>
+            <div class="header-contacts">
+              ${contactsList.join('')}
+            </div>
+          </div>
+          ${avatarHTML}
+        </div>
+        <div class="compact-divider-rule"></div>
+      </header>
+    `;
   }
   return '';
+}
+
+// Config-driven section preview renderers
+const SECTION_PREVIEW_RENDERERS = {
+  experience: {
+    title: '工作经历',
+    sectionClass: 'section-experience',
+    skipIf: (item) => !item.company && !item.role,
+    render: (item) => `
+      <div class="resume-item">
+        <div class="resume-item-header">
+          <span contenteditable="true" data-path="experience.${item.id}.company">${item.company}</span>
+          <span class="resume-item-date">
+            <span contenteditable="true" data-path="experience.${item.id}.startDate">${item.startDate}</span> ~
+            <span contenteditable="true" data-path="experience.${item.id}.endDate">${item.endDate}</span>
+          </span>
+        </div>
+        <div class="resume-item-sub">
+          <span contenteditable="true" data-path="experience.${item.id}.role">${item.role}</span>
+        </div>
+        <div class="resume-item-description" contenteditable="true" data-path="experience.${item.id}.description">${item.description}</div>
+      </div>`
+  },
+  education: {
+    title: '教育背景',
+    sectionClass: 'section-education',
+    skipIf: (item) => !item.institution,
+    render: (item) => `
+      <div class="resume-item">
+        <div class="resume-item-header">
+          <span contenteditable="true" data-path="education.${item.id}.institution">${item.institution}</span>
+          <span class="resume-item-date" contenteditable="true" data-path="education.${item.id}.startDate">${item.startDate}</span>
+        </div>
+        <div class="resume-item-sub">
+          <span contenteditable="true" data-path="education.${item.id}.degree">${item.degree}</span> -
+          <span contenteditable="true" data-path="education.${item.id}.major">${item.major}</span>
+        </div>
+        <div class="resume-item-description" contenteditable="true" data-path="education.${item.id}.description">${item.description || ''}</div>
+      </div>`
+  },
+  projects: {
+    title: '项目经验',
+    sectionClass: 'section-projects',
+    skipIf: (item) => !item.name,
+    render: (item) => {
+      const dateHTML = (item.startDate || item.endDate) ? `
+        <span class="resume-item-date">
+          <span contenteditable="true" data-path="projects.${item.id}.startDate">${item.startDate || ''}</span>
+          ${(item.startDate && item.endDate) ? ' ~ ' : ''}
+          <span contenteditable="true" data-path="projects.${item.id}.endDate">${item.endDate || ''}</span>
+        </span>` : '';
+
+      const techHTML = item.techStack ? `
+        <div class="project-tech-stack">
+          <strong class="tech-stack-label">技术栈：</strong><span class="tech-stack-val" contenteditable="true" data-path="projects.${item.id}.techStack">${item.techStack}</span>
+        </div>` : '';
+
+      const linkHTML = item.link ? `
+        <span class="project-link-label">
+          <i data-lucide="external-link" class="link-icon"></i>
+          <span>链接:</span> <span contenteditable="true" data-path="projects.${item.id}.link" class="project-link-url">${item.link}</span>
+        </span>` : '';
+
+      const subHTML = (techHTML || linkHTML) ? `
+        <div class="resume-item-sub">
+          ${techHTML}
+          ${linkHTML}
+        </div>` : '';
+
+      return `
+        <div class="resume-item">
+          <div class="resume-item-header">
+            <span class="project-name-role">
+              <span contenteditable="true" data-path="projects.${item.id}.name" style="font-weight: 700;">${item.name}</span>
+              <span class="project-role-sep">·</span>
+              <span contenteditable="true" data-path="projects.${item.id}.role" class="project-role">${item.role}</span>
+            </span>
+            ${dateHTML}
+          </div>
+          ${subHTML}
+          <div class="resume-item-description" contenteditable="true" data-path="projects.${item.id}.description">${item.description}</div>
+        </div>`;
+    }
+  },
+  skills: {
+    title: '专业技能',
+    sectionClass: 'section-skills',
+    skipIf: (item) => !item.category,
+    isSkillType: true,
+    render: (item) => {
+      const tags = item.tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0);
+      const tagsHTML = tags.map((tag, tagIdx) => `
+        <span class="resume-skill-tag" contenteditable="true" data-path="skills.${item.id}.tags.${tagIdx}">${tag}</span>
+      `).join('');
+      return `
+        <div class="resume-skill-cat">
+          <div class="resume-skill-cat-name" contenteditable="true" data-path="skills.${item.id}.category">${item.category}</div>
+          <div class="resume-skill-tags">${tagsHTML}</div>
+        </div>`;
+    }
+  }
+};
+
+// Render a list-type section (experience, education, projects, skills) using config
+function renderSectionItemsHTML(sectionKey) {
+  const config = SECTION_PREVIEW_RENDERERS[sectionKey];
+  if (!config || state[sectionKey].length === 0) return '';
+
+  let itemsHTML = '';
+  state[sectionKey].forEach(item => {
+    if (config.skipIf(item)) return;
+    itemsHTML += config.render(item);
+  });
+
+  if (!itemsHTML) return '';
+
+  const listClass = config.isSkillType ? 'resume-skills-grid' : 'resume-items-list';
+  return `
+    <section class="resume-section ${config.sectionClass}">
+      <div class="resume-section-title">
+        <span>${config.title}</span>
+      </div>
+      <div class="${listClass}">${itemsHTML}</div>
+    </section>`;
 }
 
 // Returns concatenated HTML of listed sections
 function renderSectionsHTML(sectionsList) {
   let sectionsHTML = '';
-  
+
   sectionsList.forEach(sectionKey => {
-    // Check visibility toggle
     if (state.sectionVisibility[sectionKey] === false) return;
 
     if (sectionKey === 'summary' && state.summary) {
       sectionsHTML += `
         <section class="resume-section section-summary">
           <div class="resume-section-title">
-          <span>自我评价</span>
+            <span>自我评价</span>
           </div>
           <div class="resume-summary" contenteditable="true" data-path="summary">${state.summary}</div>
-        </section>
-      `;
-    } 
-    else if (sectionKey === 'experience' && state.experience.length > 0) {
-      let itemsHTML = '';
-      state.experience.forEach(item => {
-        if (!item.company && !item.role) return;
-        itemsHTML += `
-          <div class="resume-item">
-            <div class="resume-item-header">
-              <span contenteditable="true" data-path="experience.${item.id}.company">${item.company}</span>
-              <span>
-                <span contenteditable="true" data-path="experience.${item.id}.startDate">${item.startDate}</span> ~ 
-                <span contenteditable="true" data-path="experience.${item.id}.endDate">${item.endDate}</span>
-              </span>
-            </div>
-            <div class="resume-item-sub">
-              <span contenteditable="true" data-path="experience.${item.id}.role">${item.role}</span>
-            </div>
-            <div class="resume-item-description" contenteditable="true" data-path="experience.${item.id}.description">${item.description}</div>
-          </div>
-        `;
-      });
-      if (itemsHTML) {
-        sectionsHTML += `
-          <section class="resume-section section-experience">
-            <div class="resume-section-title">
-          <span>工作经历</span>
-            </div>
-            <div class="resume-items-list">${itemsHTML}</div>
-          </section>
-        `;
-      }
-    } 
-    else if (sectionKey === 'education' && state.education.length > 0) {
-      let itemsHTML = '';
-      state.education.forEach(item => {
-        if (!item.institution) return;
-        itemsHTML += `
-          <div class="resume-item">
-            <div class="resume-item-header">
-              <span contenteditable="true" data-path="education.${item.id}.institution">${item.institution}</span>
-              <span contenteditable="true" data-path="education.${item.id}.startDate">${item.startDate}</span>
-            </div>
-            <div class="resume-item-sub">
-              <span contenteditable="true" data-path="education.${item.id}.degree">${item.degree}</span> - 
-              <span contenteditable="true" data-path="education.${item.id}.major">${item.major}</span>
-            </div>
-            <div class="resume-item-description" contenteditable="true" data-path="education.${item.id}.description">${item.description || ''}</div>
-          </div>
-        `;
-      });
-      if (itemsHTML) {
-        sectionsHTML += `
-          <section class="resume-section section-education">
-            <div class="resume-section-title">
-          <span>教育背景</span>
-            </div>
-            <div class="resume-items-list">${itemsHTML}</div>
-          </section>
-        `;
-      }
-    } 
-    else if (sectionKey === 'projects' && state.projects.length > 0) {
-      let itemsHTML = '';
-      state.projects.forEach(item => {
-        if (!item.name) return;
-        
-        const dateHTML = (item.startDate || item.endDate) ? `
-          <span class="resume-item-date">
-            <span contenteditable="true" data-path="projects.${item.id}.startDate">${item.startDate || ''}</span>
-            ${(item.startDate && item.endDate) ? ' ~ ' : ''}
-            <span contenteditable="true" data-path="projects.${item.id}.endDate">${item.endDate || ''}</span>
-          </span>
-        ` : '';
-
-        const techHTML = item.techStack ? `
-          <div class="project-tech-stack">
-            <strong>技术栈：</strong><span contenteditable="true" data-path="projects.${item.id}.techStack">${item.techStack}</span>
-          </div>
-        ` : '';
-
-        const linkHTML = item.link ? `
-          <span class="project-link-label">
-            链接: <span contenteditable="true" data-path="projects.${item.id}.link">${item.link}</span>
-          </span>
-        ` : '';
-
-        const subHTML = (techHTML || linkHTML) ? `
-          <div class="resume-item-sub">
-            ${techHTML}
-            ${linkHTML}
-          </div>
-        ` : '';
-
-        itemsHTML += `
-          <div class="resume-item">
-            <div class="resume-item-header">
-              <span class="project-name-role">
-                <span contenteditable="true" data-path="projects.${item.id}.name" style="font-weight: 700;">${item.name}</span>
-                <span class="project-role-sep">·</span>
-                <span contenteditable="true" data-path="projects.${item.id}.role" class="project-role">${item.role}</span>
-              </span>
-              ${dateHTML}
-            </div>
-            ${subHTML}
-            <div class="resume-item-description" contenteditable="true" data-path="projects.${item.id}.description">${item.description}</div>
-          </div>
-        `;
-      });
-      if (itemsHTML) {
-        sectionsHTML += `
-          <section class="resume-section section-projects">
-            <div class="resume-section-title">
-          <span>项目经验</span>
-            </div>
-            <div class="resume-items-list">${itemsHTML}</div>
-          </section>
-        `;
-      }
-    } 
-    else if (sectionKey === 'skills' && state.skills.length > 0) {
-      let itemsHTML = '';
-      state.skills.forEach(item => {
-        if (!item.category) return;
-        
-        const tags = item.tags.split(',')
-          .map(tag => tag.trim())
-          .filter(tag => tag.length > 0);
-          
-        const tagsHTML = tags.map((tag, tagIdx) => `
-          <span class="resume-skill-tag" contenteditable="true" data-path="skills.${item.id}.tags.${tagIdx}">${tag}</span>
-        `).join('');
-        
-        itemsHTML += `
-          <div class="resume-skill-cat">
-            <div class="resume-skill-cat-name" contenteditable="true" data-path="skills.${item.id}.category">${item.category}</div>
-            <div class="resume-skill-tags">${tagsHTML}</div>
-          </div>
-        `;
-      });
-      if (itemsHTML) {
-        sectionsHTML += `
-          <section class="resume-section section-skills">
-            <div class="resume-section-title">
-          <span>专业技能</span>
-            </div>
-            <div class="resume-skills-grid">${itemsHTML}</div>
-          </section>
-        `;
-      }
+        </section>`;
+    } else if (sectionKey !== 'summary') {
+      sectionsHTML += renderSectionItemsHTML(sectionKey);
     }
   });
 
