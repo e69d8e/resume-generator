@@ -1064,9 +1064,10 @@ function updateZoom() {
 
 function renderSortableSections() {
   const container = document.getElementById('sortable-sections');
-  container.innerHTML = '';
+  if (!container) return;
 
   const isTwoColumnTemplate = state.template === 'modern' || state.template === 'sidebar';
+  const fragment = document.createDocumentFragment();
 
   state.sectionOrder.forEach((section, index) => {
     const isVisible = state.sectionVisibility[section] !== false;
@@ -1081,7 +1082,10 @@ function renderSortableSections() {
       </button>
     ` : '';
 
-    const eyeIcon = isVisible ? 'eye' : 'eye-off';
+    const eyeIconSVG = isVisible
+      ? `<svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path><circle cx="12" cy="12" r="3"></circle></svg>`
+      : `<svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"></path><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"></path><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"></path><line x1="2" x2="22" y1="2" y2="22"></line></svg>`;
+
     const eyeTitle = isVisible ? '隐藏模块' : '显示模块';
 
     const item = document.createElement('div');
@@ -1091,11 +1095,11 @@ function renderSortableSections() {
     item.setAttribute('data-section', section);
     item.innerHTML = `
       <div class="sortable-item-left">
-        <span class="drag-handle"><i data-lucide="grip-vertical"></i></span>
+        <span class="drag-handle"><svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="12" r="1"></circle><circle cx="9" cy="5" r="1"></circle><circle cx="9" cy="19" r="1"></circle><circle cx="15" cy="12" r="1"></circle><circle cx="15" cy="5" r="1"></circle><circle cx="15" cy="19" r="1"></circle></svg></span>
         <button class="visibility-btn ${isVisible ? 'visible' : 'hidden'}" 
                 onclick="toggleSectionVisibility('${section}', ${!isVisible}, event)"
                 title="${eyeTitle}">
-          <i data-lucide="${eyeIcon}"></i>
+          ${eyeIconSVG}
         </button>
         <span class="section-name-text ${isVisible ? '' : 'text-muted'}">${displayName}</span>
       </div>
@@ -1111,10 +1115,11 @@ function renderSortableSections() {
     item.addEventListener('drop', handleDrop);
     item.addEventListener('dragend', handleDragEnd);
 
-    container.appendChild(item);
+    fragment.appendChild(item);
   });
 
-  refreshIcons();
+  container.innerHTML = '';
+  container.appendChild(fragment);
 }
 
 // HTML5 Drag & Drop callbacks
@@ -1131,7 +1136,9 @@ function handleDragOver(e) {
   if (e.preventDefault) {
     e.preventDefault();
   }
-  this.classList.add('drag-over');
+  if (dragSourceEl && dragSourceEl !== this && !this.classList.contains('drag-over')) {
+    this.classList.add('drag-over');
+  }
   e.dataTransfer.dropEffect = 'move';
   return false;
 }
@@ -1144,26 +1151,37 @@ function handleDrop(e) {
   e.stopPropagation();
   this.classList.remove('drag-over');
   
-  if (dragSourceEl !== this) {
-    const fromIndex = parseInt(dragSourceEl.dataset.index);
-    const toIndex = parseInt(this.dataset.index);
+  if (dragSourceEl && dragSourceEl !== this) {
+    const fromIndex = parseInt(dragSourceEl.dataset.index, 10);
+    const toIndex = parseInt(this.dataset.index, 10);
     
-    // Move element in sectionOrder array
-    const movedSection = state.sectionOrder.splice(fromIndex, 1)[0];
-    state.sectionOrder.splice(toIndex, 0, movedSection);
-    
-    saveStateToLocalStorage();
-    renderSortableSections();
-    renderPreview();
+    if (!isNaN(fromIndex) && !isNaN(toIndex) && fromIndex !== toIndex) {
+      // Move element in sectionOrder array
+      const movedSection = state.sectionOrder.splice(fromIndex, 1)[0];
+      state.sectionOrder.splice(toIndex, 0, movedSection);
+      
+      // Update sidebar sortable UI immediately
+      renderSortableSections();
+      saveStateToLocalStorageDebounced();
+      
+      // Render preview smoothly on next animation frame
+      requestAnimationFrame(() => {
+        renderPreview();
+      });
+    }
   }
   return false;
 }
 
 function handleDragEnd(e) {
-  this.classList.remove('dragging');
+  if (dragSourceEl) {
+    dragSourceEl.classList.remove('dragging');
+    dragSourceEl = null;
+  }
   const items = document.querySelectorAll('.sortable-item');
   items.forEach(item => {
     item.classList.remove('drag-over');
+    item.classList.remove('dragging');
   });
 }
 
@@ -1175,7 +1193,9 @@ window.toggleSectionColumn = function(section, event = null) {
   state.sectionColumns[section] = state.sectionColumns[section] === 'left' ? 'right' : 'left';
   saveStateToLocalStorage();
   renderSortableSections();
-  renderPreview();
+  requestAnimationFrame(() => {
+    renderPreview();
+  });
 };
 
 window.toggleSectionVisibility = function(section, isVisible, event = null) {
@@ -1183,7 +1203,9 @@ window.toggleSectionVisibility = function(section, isVisible, event = null) {
   state.sectionVisibility[section] = isVisible;
   saveStateToLocalStorage();
   renderSortableSections();
-  renderPreview();
+  requestAnimationFrame(() => {
+    renderPreview();
+  });
 };
 
 // ==========================================

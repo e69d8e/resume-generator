@@ -2161,7 +2161,8 @@ input:checked + .slider:before {
 /* Drag and Drop Feedbacks */
 .sortable-item {
   cursor: grab;
-  transition: transform 0.2s, border-color 0.2s, background-color 0.2s;
+  transition: transform 0.15s cubic-bezier(0.2, 0, 0, 1), background-color 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+  will-change: transform, box-shadow;
 }
 
 .sortable-item:active {
@@ -2169,13 +2170,16 @@ input:checked + .slider:before {
 }
 
 .sortable-item.dragging {
-  opacity: 0.4;
+  opacity: 0.45;
+  transform: scale(0.98);
   border: 1px dashed var(--ui-primary) !important;
   background-color: rgba(204, 120, 92, 0.08) !important;
 }
 
 .sortable-item.drag-over {
-  border-top: 2px solid var(--ui-primary) !important;
+  border-color: var(--ui-primary) !important;
+  box-shadow: 0 -2px 0 0 var(--ui-primary), 0 4px 12px rgba(204, 120, 92, 0.12) !important;
+  transform: translateY(-2px);
 }
 
 /* ==========================================
