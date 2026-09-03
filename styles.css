@@ -341,13 +341,13 @@ body {
   height: 10px;
   border-radius: 50%;
 }
-.modern-dot { background-color: #0f766e; }
-.elegant-dot { background-color: #8b5cf6; }
+.modern-dot { background-color: #486581; }
+.elegant-dot { background-color: #66556e; }
 .sidebar-dot { background-color: #1e293b; }
-.geek-dot { background-color: #3b82f6; }
-.minimal-dot { background-color: #737373; }
-.creative-dot { background: linear-gradient(135deg, #ec4899, #f59e0b); }
-.compact-dot { background-color: #0f172a; }
+.geek-dot { background-color: #576574; }
+.minimal-dot { background-color: #71717a; }
+.creative-dot { background: linear-gradient(135deg, #8a6152, #855c65); }
+.compact-dot { background-color: #27272a; }
 
 /* Color presets circular buttons */
 .color-presets {
@@ -445,6 +445,61 @@ select {
 }
 
 /* Avatar Upload Widget */
+.avatar-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.avatar-shape-pills {
+  display: flex;
+  gap: 4px;
+}
+
+.shape-pill-btn {
+  font-size: 11px;
+  font-weight: 500;
+  padding: 3px 8px;
+  border-radius: 9999px;
+  border: 1px solid var(--ui-border);
+  background: var(--ui-bg);
+  color: var(--ui-text-muted);
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.shape-pill-btn:hover {
+  border-color: var(--ui-text-muted);
+  color: var(--ui-text);
+}
+
+.shape-pill-btn.active {
+  background: var(--ui-primary);
+  border-color: var(--ui-primary);
+  color: #fff;
+}
+
+.avatar-controls-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.avatar-action-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.avatar-action-buttons .btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  padding: 5px 12px;
+}
+
 .avatar-upload-area {
   width: 80px;
   height: 80px;
@@ -458,6 +513,25 @@ select {
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
+}
+
+.avatar-upload-area.shape-circle {
+  border-radius: 50%;
+  width: 80px;
+  height: 80px;
+}
+
+.avatar-upload-area.shape-square {
+  border-radius: 12px;
+  width: 80px;
+  height: 80px;
+}
+
+.avatar-upload-area.shape-rect {
+  border-radius: 8px;
+  width: 72px;
+  height: 96px; /* 3:4 aspect ratio */
 }
 
 .avatar-upload-area:hover,
@@ -476,7 +550,18 @@ select {
   height: 100%;
   object-fit: cover;
   display: none;
+}
+
+.avatar-upload-area.shape-circle .avatar-preview-img {
   border-radius: 50%;
+}
+
+.avatar-upload-area.shape-square .avatar-preview-img {
+  border-radius: 12px;
+}
+
+.avatar-upload-area.shape-rect .avatar-preview-img {
+  border-radius: 8px;
 }
 
 .avatar-preview-img[src]:not([src=""]) {
@@ -588,17 +673,46 @@ select {
   letter-spacing: -0.2px;
 }
 
+.crop-shape-selector {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+  justify-content: center;
+}
+
+.crop-shape-btn {
+  font-size: 12px;
+  font-weight: 500;
+  padding: 5px 12px;
+  border-radius: 20px;
+  border: 1px solid var(--ui-border);
+  background: var(--ui-bg);
+  color: var(--ui-text-muted);
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.crop-shape-btn:hover {
+  border-color: var(--ui-text);
+  color: var(--ui-text);
+}
+
+.crop-shape-btn.active {
+  background: var(--ui-primary);
+  border-color: var(--ui-primary);
+  color: #fff;
+}
+
 .crop-viewport {
-  width: 240px;
-  height: 240px;
-  border-radius: 50%;
   overflow: hidden;
   position: relative;
-  background: var(--ui-surface-dark);
+  background: #111;
   cursor: grab;
   user-select: none;
   -webkit-user-select: none;
   flex-shrink: 0;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  touch-action: none;
 }
 
 .crop-viewport:active {
@@ -612,14 +726,22 @@ select {
   transform-origin: 0 0;
   pointer-events: none;
   -webkit-user-drag: none;
+  max-width: none !important;
+  max-height: none !important;
 }
 
 .crop-mask-ring {
   position: absolute;
   inset: 0;
-  border-radius: 50%;
-  box-shadow: 0 0 0 9999px rgba(20, 20, 19, 0.45);
+  box-shadow: 0 0 0 9999px rgba(15, 15, 15, 0.6);
   pointer-events: none;
+  border: 2px solid rgba(255, 255, 255, 0.45);
+}
+
+.crop-hint {
+  font-size: 11px;
+  color: var(--ui-text-muted);
+  margin-top: -8px;
 }
 
 .crop-zoom-row {
@@ -630,11 +752,29 @@ select {
   padding: 0 8px;
 }
 
-.crop-zoom-row i {
-  width: 16px;
-  height: 16px;
+.crop-zoom-row svg {
   color: var(--ui-text-muted);
   flex-shrink: 0;
+}
+
+.crop-reset-btn {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--ui-border);
+  background: var(--ui-bg);
+  color: var(--ui-text-muted);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: var(--transition);
+  flex-shrink: 0;
+}
+
+.crop-reset-btn:hover {
+  color: var(--ui-text);
+  border-color: var(--ui-text);
 }
 
 .crop-zoom-row input[type="range"] {
@@ -679,6 +819,67 @@ select {
 
 .crop-actions .btn {
   flex: 1;
+}
+
+/* Universal Avatar Shape Rules for Resume Templates */
+.avatar-container.shape-circle {
+  border-radius: 50% !important;
+}
+.avatar-container.shape-circle .avatar-img {
+  border-radius: 50% !important;
+}
+
+.avatar-container.shape-square {
+  border-radius: 10px !important;
+}
+.avatar-container.shape-square .avatar-img {
+  border-radius: 8px !important;
+}
+
+.avatar-container.shape-rect {
+  border-radius: 6px !important;
+  aspect-ratio: 3 / 4;
+}
+.avatar-container.shape-rect .avatar-img {
+  border-radius: 4px !important;
+  aspect-ratio: 3 / 4;
+}
+
+/* Specific template adjustments for 3:4 rect */
+.template-modern .avatar-container.shape-rect {
+  width: 60px !important;
+  height: 80px !important;
+}
+
+.template-elegant .avatar-container.shape-rect {
+  width: 66px !important;
+  height: 88px !important;
+}
+
+.template-sidebar .avatar-container.shape-rect {
+  width: 78px !important;
+  height: 104px !important;
+  margin: 0 auto 16px !important;
+}
+
+.template-geek .avatar-container.shape-rect {
+  width: 60px !important;
+  height: 80px !important;
+}
+
+.template-minimal .avatar-container.shape-rect {
+  width: 60px !important;
+  height: 80px !important;
+}
+
+.template-creative .avatar-container.shape-rect {
+  width: 66px !important;
+  height: 88px !important;
+}
+
+.template-compact .avatar-container.shape-rect {
+  width: 54px !important;
+  height: 72px !important;
 }
 
 /* Sortable List for Sections Order */
@@ -1163,170 +1364,175 @@ input:checked + .slider:before {
 }
 
 /* Resume Themes styling variables mappings */
-/* Presets: Theme-Navy */
+/* Resume Themes styling variables mappings (Refined Low-Saturation Editorial Palette) */
+/* Presets: Theme-Navy (玄青蓝) */
 .resume-paper.theme-navy,
 .resume-page.theme-navy {
   --primary: #1e293b;
-  --accent: #0f766e;
-  --accent-light: rgba(15, 118, 110, 0.08);
-  --accent-border-strong: rgba(15, 118, 110, 0.20);
-  --accent-border: rgba(15, 118, 110, 0.15);
-  --accent-border-light: rgba(15, 118, 110, 0.10);
-  --sidebar-bg-start: #f0f7f6;
-  --sidebar-bg-end: #f9fcfb;
+  --accent: #486581;
+  --accent-light: rgba(72, 101, 129, 0.08);
+  --accent-border-strong: rgba(72, 101, 129, 0.22);
+  --accent-border: rgba(72, 101, 129, 0.14);
+  --accent-border-light: rgba(72, 101, 129, 0.08);
+  --sidebar-bg-start: #f4f6f8;
+  --sidebar-bg-end: #fafbfc;
   --text-main: #334155;
   --text-dark: #0f172a;
 }
-/* Presets: Theme-Emerald */
+/* Presets: Theme-Emerald (松石灰) */
 .resume-paper.theme-emerald,
 .resume-page.theme-emerald {
-  --primary: #064e3b;
-  --accent: #059669;
-  --accent-light: rgba(5, 150, 105, 0.08);
-  --accent-border-strong: rgba(5, 150, 105, 0.20);
-  --accent-border: rgba(5, 150, 105, 0.15);
-  --accent-border-light: rgba(5, 150, 105, 0.10);
-  --sidebar-bg-start: #f0faf6;
-  --sidebar-bg-end: #fcfdfc;
-  --text-main: #2f3e35;
-  --text-dark: #042f1a;
+  --primary: #1f3a38;
+  --accent: #4a7c76;
+  --accent-light: rgba(74, 124, 118, 0.08);
+  --accent-border-strong: rgba(74, 124, 118, 0.22);
+  --accent-border: rgba(74, 124, 118, 0.14);
+  --accent-border-light: rgba(74, 124, 118, 0.08);
+  --sidebar-bg-start: #f2f6f5;
+  --sidebar-bg-end: #fafcfb;
+  --text-main: #344743;
+  --text-dark: #122926;
 }
-/* Presets: Theme-Wine */
+/* Presets: Theme-Wine (栗壳棕) */
 .resume-paper.theme-wine,
 .resume-page.theme-wine {
-  --primary: #4c0519;
-  --accent: #be123c;
-  --accent-light: rgba(190, 18, 60, 0.08);
-  --accent-border-strong: rgba(190, 18, 60, 0.20);
-  --accent-border: rgba(190, 18, 60, 0.15);
-  --accent-border-light: rgba(190, 18, 60, 0.10);
-  --sidebar-bg-start: #fdf3f5;
-  --sidebar-bg-end: #fffafb;
-  --text-main: #4a3e3e;
-  --text-dark: #27020b;
+  --primary: #382f2d;
+  --accent: #7c655b;
+  --accent-light: rgba(124, 101, 91, 0.08);
+  --accent-border-strong: rgba(124, 101, 91, 0.22);
+  --accent-border: rgba(124, 101, 91, 0.14);
+  --accent-border-light: rgba(124, 101, 91, 0.08);
+  --sidebar-bg-start: #f7f4f3;
+  --sidebar-bg-end: #fcfbfa;
+  --text-main: #4a3e3c;
+  --text-dark: #241c1a;
 }
-/* Presets: Theme-Indigo */
+/* Presets: Theme-Indigo (灰霁蓝) */
 .resume-paper.theme-indigo,
 .resume-page.theme-indigo {
-  --primary: #1e1b4b;
-  --accent: #4f46e5;
-  --accent-light: rgba(79, 70, 229, 0.08);
-  --accent-border-strong: rgba(79, 70, 229, 0.20);
-  --accent-border: rgba(79, 70, 229, 0.15);
-  --accent-border-light: rgba(79, 70, 229, 0.10);
-  --sidebar-bg-start: #f4f3fd;
-  --sidebar-bg-end: #fafafc;
-  --text-main: #3c3a4e;
-  --text-dark: #0c0a21;
+  --primary: #1f2d3d;
+  --accent: #576574;
+  --accent-light: rgba(87, 101, 116, 0.08);
+  --accent-border-strong: rgba(87, 101, 116, 0.22);
+  --accent-border: rgba(87, 101, 116, 0.14);
+  --accent-border-light: rgba(87, 101, 116, 0.08);
+  --sidebar-bg-start: #f3f5f8;
+  --sidebar-bg-end: #fafbfc;
+  --text-main: #3b4856;
+  --text-dark: #131d27;
 }
-/* Presets: Theme-Dark */
+/* Presets: Theme-Dark (暗夜黑) */
 .resume-paper.theme-dark,
 .resume-page.theme-dark {
-  --primary: #111827;
-  --accent: #4b5563;
-  --accent-light: rgba(75, 85, 99, 0.08);
-  --accent-border-strong: rgba(75, 85, 99, 0.20);
-  --accent-border: rgba(75, 85, 99, 0.15);
-  --accent-border-light: rgba(75, 85, 99, 0.10);
-  --sidebar-bg-start: #f5f6f8;
-  --sidebar-bg-end: #fafbfc;
-  --text-main: #374151;
-  --text-dark: #030712;
+  --primary: #18181b;
+  --accent: #52525b;
+  --accent-light: rgba(82, 82, 91, 0.08);
+  --accent-border-strong: rgba(82, 82, 91, 0.22);
+  --accent-border: rgba(82, 82, 91, 0.14);
+  --accent-border-light: rgba(82, 82, 91, 0.08);
+  --sidebar-bg-start: #f4f4f5;
+  --sidebar-bg-end: #fafafa;
+  --text-main: #3f3f46;
+  --text-dark: #09090b;
 }
 
-/* Presets: Theme-Amber */
+/* Presets: Theme-Amber (陶土褐) */
 .resume-paper.theme-amber,
 .resume-page.theme-amber {
-  --primary: #78350f;
-  --accent: #d97706;
-  --accent-light: rgba(217, 119, 6, 0.08);
-  --accent-border-strong: rgba(217, 119, 6, 0.20);
-  --accent-border: rgba(217, 119, 6, 0.15);
-  --accent-border-light: rgba(217, 119, 6, 0.10);
-  --sidebar-bg-start: #fefaf2;
-  --sidebar-bg-end: #fffdfa;
-  --text-main: #5c483a;
-  --text-dark: #3b1d06;
+  --primary: #3d2b27;
+  --accent: #8a6152;
+  --accent-light: rgba(138, 97, 82, 0.08);
+  --accent-border-strong: rgba(138, 97, 82, 0.22);
+  --accent-border: rgba(138, 97, 82, 0.14);
+  --accent-border-light: rgba(138, 97, 82, 0.08);
+  --sidebar-bg-start: #f8f4f2;
+  --sidebar-bg-end: #fdfbfa;
+  --text-main: #523e38;
+  --text-dark: #271a17;
 }
 
-/* Presets: Theme-Slate */
+/* Presets: Theme-Slate (烟青灰) */
 .resume-paper.theme-slate,
 .resume-page.theme-slate {
-  --primary: #1e3a8a;
-  --accent: #3b82f6;
-  --accent-light: rgba(59, 130, 246, 0.08);
-  --accent-border-strong: rgba(59, 130, 246, 0.20);
-  --accent-border: rgba(59, 130, 246, 0.15);
-  --accent-border-light: rgba(59, 130, 246, 0.10);
-  --sidebar-bg-start: #f1f5f9;
-  --sidebar-bg-end: #f8fafc;
-  --text-main: #475569;
-  --text-dark: #0f172a;
+  --primary: #262c36;
+  --accent: #5c6b73;
+  --accent-light: rgba(92, 107, 115, 0.08);
+  --accent-border-strong: rgba(92, 107, 115, 0.22);
+  --accent-border: rgba(92, 107, 115, 0.14);
+  --accent-border-light: rgba(92, 107, 115, 0.08);
+  --sidebar-bg-start: #f3f5f6;
+  --sidebar-bg-end: #fafbfb;
+  --text-main: #3e4852;
+  --text-dark: #151a20;
 }
 
-/* Presets: Theme-Sand */
+/* Presets: Theme-Sand (暖麦杏) */
 .resume-paper.theme-sand,
 .resume-page.theme-sand {
-  --primary: #45322e;
-  --accent: #c27854;
-  --accent-light: rgba(194, 120, 84, 0.08);
-  --accent-border-strong: rgba(194, 120, 84, 0.20);
-  --accent-border: rgba(194, 120, 84, 0.15);
-  --accent-border-light: rgba(194, 120, 84, 0.10);
-  --sidebar-bg-start: #faf6f0;
-  --sidebar-bg-end: #fdfbf7;
-  --text-main: #5c4d4a;
-  --text-dark: #2e1e1b;
+  --primary: #403531;
+  --accent: #8c766b;
+  --accent-light: rgba(140, 118, 107, 0.08);
+  --accent-border-strong: rgba(140, 118, 107, 0.22);
+  --accent-border: rgba(140, 118, 107, 0.14);
+  --accent-border-light: rgba(140, 118, 107, 0.08);
+  --sidebar-bg-start: #f7f5f2;
+  --sidebar-bg-end: #fcfbf9;
+  --text-main: #504440;
+  --text-dark: #271f1b;
 }
 
-/* Presets: Theme-Olive */
+/* Presets: Theme-Olive (云杉绿) */
 .resume-paper.theme-olive,
 .resume-page.theme-olive {
-  --primary: #14532d;
-  --accent: #16a34a;
-  --accent-light: rgba(22, 163, 74, 0.08);
-  --accent-border-strong: rgba(22, 163, 74, 0.20);
-  --accent-border: rgba(22, 163, 74, 0.15);
-  --accent-border-light: rgba(22, 163, 74, 0.10);
-  --sidebar-bg-start: #f0f7f4;
-  --sidebar-bg-end: #fafdfb;
-  --text-main: #3f4e43;
-  --text-dark: #0f2b18;
+  --primary: #24332b;
+  --accent: #526e5e;
+  --accent-light: rgba(82, 110, 94, 0.08);
+  --accent-border-strong: rgba(82, 110, 94, 0.22);
+  --accent-border: rgba(82, 110, 94, 0.14);
+  --accent-border-light: rgba(82, 110, 94, 0.08);
+  --sidebar-bg-start: #f2f5f3;
+  --sidebar-bg-end: #fbfdfc;
+  --text-main: #3a4b41;
+  --text-dark: #14211a;
 }
 
-/* Presets: Theme-Rose */
+/* Presets: Theme-Rose (干枯玫瑰) */
 .resume-paper.theme-rose,
 .resume-page.theme-rose {
-  --primary: #4c1d24;
-  --accent: #db2777;
-  --accent-light: rgba(219, 39, 119, 0.08);
-  --accent-border-strong: rgba(219, 39, 119, 0.20);
-  --accent-border: rgba(219, 39, 119, 0.15);
-  --accent-border-light: rgba(219, 39, 119, 0.10);
-  --sidebar-bg-start: #fff5f7;
-  --sidebar-bg-end: #fffbfb;
-  --text-main: #5a4548;
-  --text-dark: #2a0c10;
+  --primary: #38262a;
+  --accent: #855c65;
+  --accent-light: rgba(133, 92, 101, 0.08);
+  --accent-border-strong: rgba(133, 92, 101, 0.22);
+  --accent-border: rgba(133, 92, 101, 0.14);
+  --accent-border-light: rgba(133, 92, 101, 0.08);
+  --sidebar-bg-start: #f7f3f4;
+  --sidebar-bg-end: #fdfbfc;
+  --text-main: #4d3a3d;
+  --text-dark: #221417;
 }
 
 /* Resume Typography Styles */
 .resume-paper.font-sans,
-.resume-page.font-sans {
+.resume-page.font-sans,
+.resume-measure-sandbox.font-sans {
   font-family: 'Inter', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Heiti SC', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
 }
 .resume-paper.font-serif,
-.resume-page.font-serif {
+.resume-page.font-serif,
+.resume-measure-sandbox.font-serif {
   font-family: 'Outfit', 'Noto Serif SC', 'Songti SC', 'BiauKai', 'Playfair Display', Georgia, Cambria, serif;
 }
 .resume-paper.font-tech,
-.resume-page.font-tech {
+.resume-page.font-tech,
+.resume-measure-sandbox.font-tech {
   font-family: 'STKaiti', 'KaiTi', '楷体', 'PingFang SC', 'Microsoft YaHei', 'Heiti SC', sans-serif;
   font-size: 14.5px;
 }
 
 /* Spacing Options */
 .resume-paper.spacing-compact,
-.resume-page.spacing-compact {
+.resume-page.spacing-compact,
+.resume-measure-sandbox.spacing-compact {
   --sec-gap: 8px;
   --item-gap: 3px;
   --pad: 16px;
@@ -1334,7 +1540,8 @@ input:checked + .slider:before {
   line-height: 1.25;
 }
 .resume-paper.spacing-normal,
-.resume-page.spacing-normal {
+.resume-page.spacing-normal,
+.resume-measure-sandbox.spacing-normal {
   --sec-gap: 12px;
   --item-gap: 5px;
   --pad: 20px;
@@ -1342,12 +1549,30 @@ input:checked + .slider:before {
   line-height: 1.35;
 }
 .resume-paper.spacing-comfortable,
-.resume-page.spacing-comfortable {
+.resume-page.spacing-comfortable,
+.resume-measure-sandbox.spacing-comfortable {
   --sec-gap: 16px;
   --item-gap: 8px;
   --pad: 26px;
   font-size: 13px;
   line-height: 1.45;
+}
+
+.resume-measure-sandbox {
+  background-color: #ffffff;
+  color: #1e293b;
+  width: 210mm;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  box-sizing: border-box;
+  text-align: left;
+  display: flow-root !important;
+  position: absolute;
+  left: -99999px;
+  top: -99999px;
+  visibility: hidden;
+  pointer-events: none;
 }
 
 .resume-paper {

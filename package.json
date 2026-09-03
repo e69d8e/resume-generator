@@ -1,0 +1,27 @@
+{
+  "name": "resumify",
+  "version": "2.0.0",
+  "description": "Resumify - 高质感简历生成器 (React + Vite)",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "html2canvas": "^1.4.1",
+    "jspdf": "^2.5.2",
+    "lucide-react": "^0.475.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@testing-library/react": "^16.2.0",
+    "@vitejs/plugin-react": "^4.3.4",
+    "happy-dom": "^17.4.5",
+    "vite": "^6.1.0",
+    "vitest": "^3.0.7"
+  }
+}

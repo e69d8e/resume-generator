@@ -1,4 +1,8 @@
 .DS_Store
 node_modules/
+dist/
 *.log
 .netlify/
+.playwright-cli/
+.agents/
+.claude/
