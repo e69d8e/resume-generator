@@ -1,10 +1,16 @@
 import React, { useRef, useState } from 'react';
 import { User, ChevronDown, Camera, X, Crop } from 'lucide-react';
-import { useResume } from '../../context/ResumeContext.jsx';
+import { useResumeData, useResumeUI } from '../../context/ResumeContext.jsx';
 import { AVATAR_SHAPES } from '../../constants/defaultState.js';
+import CollapseHeader from '../common/CollapseHeader.jsx';
+
+const MAX_AVATAR_FILE_BYTES = 20 * 1024 * 1024;
+// 超过该长度的 data URL 直接拒绝，防止撑爆 localStorage 配额（文件上传路径会经裁剪压缩）
+const MAX_AVATAR_DATA_URL_CHARS = 2 * 1024 * 1024;
 
 export default function PersonalForm() {
-  const { state, updatePersonal, openCropModal } = useResume();
+  const { state, updatePersonal } = useResumeData();
+  const { openCropModal, showToast } = useResumeUI();
   const [collapsed, setCollapsed] = useState(false);
   const fileInputRef = useRef(null);
   const p = state.personal || {};
@@ -12,14 +18,22 @@ export default function PersonalForm() {
 
   const handleAvatarFile = (e) => {
     const file = e.target.files?.[0];
+    e.target.value = '';
     if (!file) return;
+
+    if (file.size > MAX_AVATAR_FILE_BYTES) {
+      showToast('图片文件超过 20MB，请压缩后再上传', 'error');
+      return;
+    }
 
     const reader = new FileReader();
     reader.onload = (event) => {
       openCropModal(event.target.result);
     };
+    reader.onerror = () => {
+      showToast('图片读取失败，请重试', 'error');
+    };
     reader.readAsDataURL(file);
-    e.target.value = '';
   };
 
   const handleRemoveAvatar = (e) => {
@@ -38,13 +52,13 @@ export default function PersonalForm() {
 
   return (
     <section className={`control-card form-section ${collapsed ? 'collapsed' : ''}`} data-section-id="personal">
-      <div className="section-header" onClick={() => setCollapsed(!collapsed)}>
+      <CollapseHeader collapsed={collapsed} onToggle={() => setCollapsed(!collapsed)} label="展开或折叠基本信息">
         <div className="header-title">
           <User size={18} />
           <h2>基本信息 (Personal Info)</h2>
         </div>
         <ChevronDown className="toggle-icon" size={18} />
-      </div>
+      </CollapseHeader>
 
       <div className="section-content">
         <div className="form-grid">
@@ -90,7 +104,16 @@ export default function PersonalForm() {
             <div className="avatar-controls-wrapper">
               <div
                 className={`avatar-upload-area shape-${currentShape}`}
+                role="button"
+                tabIndex={0}
+                aria-label="上传新照片或更换头像"
                 onClick={() => fileInputRef.current?.click()}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    fileInputRef.current?.click();
+                  }
+                }}
                 title="点击上传新照片或更换头像"
               >
                 {p.avatar ? (
@@ -100,6 +123,7 @@ export default function PersonalForm() {
                       className="avatar-remove-btn"
                       id="avatar-remove-btn"
                       title="移除头像"
+                      aria-label="移除头像"
                       style={{ display: 'flex' }}
                       onClick={handleRemoveAvatar}
                     >
@@ -141,7 +165,14 @@ export default function PersonalForm() {
                 id="info-avatar"
                 placeholder="或粘贴图片网络链接 https://..."
                 value={p.avatar || ''}
-                onChange={(e) => updatePersonal('avatar', e.target.value)}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (val.startsWith('data:') && val.length > MAX_AVATAR_DATA_URL_CHARS) {
+                    showToast('图片 data URL 过大，请改用文件上传（会自动压缩）', 'error');
+                    return;
+                  }
+                  updatePersonal('avatar', val);
+                }}
               />
             </div>
           </div>

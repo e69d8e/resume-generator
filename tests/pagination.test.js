@@ -5,8 +5,10 @@ import {
   getPageContentHeight,
   getSpacingPad,
   paginateSectionsIntoPages,
-  renderFullResumeHTML
+  renderFullResumeHTML,
+  renderSectionItemsHTML
 } from '../src/utils/pagination.js';
+import { DEFAULT_STATE } from '../src/constants/defaultState.js';
 
 describe('Pagination Engine & Measurement Cache', () => {
   beforeEach(() => {
@@ -105,6 +107,58 @@ describe('Pagination Engine & Measurement Cache', () => {
       expect(headerHTML).toContain('张三');
       expect(headerHTML).toContain('前端工程师');
       expect(bodyHTML).toContain('这是自我评价');
+    });
+  });
+
+  describe('Edge Cases', () => {
+    it('should place an oversized item-less section on its own page without looping', () => {
+      const sections = [
+        {
+          outerHTML: '<section class="resume-section section-summary"><div>超长自我评价</div></section>',
+          querySelectorAll: () => [],
+          querySelector: () => null,
+          className: 'resume-section section-summary'
+        },
+        {
+          outerHTML: '<section class="resume-section section-skills"><div>技能</div></section>',
+          querySelectorAll: () => [],
+          querySelector: () => null,
+          className: 'resume-section section-skills'
+        }
+      ];
+      // 第一个 section 5000px 超过整页高度
+      let call = 0;
+      const cachedMeasure = () => (call++ === 0 ? 5000 : 100);
+      const pages = paginateSectionsIntoPages(sections, 40, 1083, 40, '', cachedMeasure);
+      expect(pages.length).toBe(2);
+    });
+
+    it('should render skill tags with 4-segment data-path for preview editing', () => {
+      const state = {
+        ...DEFAULT_STATE,
+        sectionOrder: ['skills'],
+        sectionVisibility: { skills: true },
+        sectionColumns: {},
+        skills: [{ id: 'skill-9', category: '前端', tags: 'React, Vue' }]
+      };
+      const html = renderSectionItemsHTML('skills', state);
+      expect(html).toContain('data-path="skills.skill-9.tags.0"');
+      expect(html).toContain('data-path="skills.skill-9.tags.1"');
+      expect(html).toContain('React');
+      expect(html).toContain('Vue');
+    });
+
+    it('should hide sections whose visibility is explicitly false', () => {
+      const state = {
+        ...DEFAULT_STATE,
+        sectionOrder: ['summary', 'skills'],
+        sectionVisibility: { summary: false, skills: true },
+        sectionColumns: {},
+        template: 'minimal'
+      };
+      const { bodyHTML } = renderFullResumeHTML(state);
+      expect(bodyHTML).not.toContain('自我评价');
+      expect(bodyHTML).toContain('专业技能');
     });
   });
 });

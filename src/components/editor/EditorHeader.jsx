@@ -1,14 +1,16 @@
-import React, { useRef, useState } from 'react';
-import { Sparkles, Upload, Download, DownloadCloud, Loader } from 'lucide-react';
-import { useResume } from '../../context/ResumeContext.jsx';
+import React, { useRef } from 'react';
+import { Upload, Download, DownloadCloud, Loader, RotateCcw } from 'lucide-react';
+import { useResumeData, useResumeUI } from '../../context/ResumeContext.jsx';
 import { exportStateAsJSON, mergeState } from '../../utils/storage.js';
-import { exportToPDF } from '../../utils/pdfExport.js';
+import { useExportPDF } from '../../hooks/useExportPDF.js';
 import { DEFAULT_STATE } from '../../constants/defaultState.js';
+import SpikeMark from '../common/SpikeMark.jsx';
 
 export default function EditorHeader() {
-  const { state, setState, showToast } = useResume();
+  const { state, setState, resetState } = useResumeData();
+  const { showToast } = useResumeUI();
   const fileInputRef = useRef(null);
-  const [isExportingPDF, setIsExportingPDF] = useState(false);
+  const { isExporting: isExportingPDF, handleExportPDF } = useExportPDF();
 
   const handleImportClick = () => {
     if (fileInputRef.current) {
@@ -41,29 +43,16 @@ export default function EditorHeader() {
     showToast('数据导出成功！');
   };
 
-  const handleExportPDF = async () => {
-    if (isExportingPDF) return;
-    setIsExportingPDF(true);
-    try {
-      const container = document.getElementById('resume-container');
-      if (!container) {
-        showToast('未找到简历预览区域！', 'error');
-        return;
-      }
-      await exportToPDF(container, state.personal.name);
-      showToast('PDF 导出成功！');
-    } catch (err) {
-      console.error('PDF export failed:', err);
-      showToast('PDF 导出失败，请重试！', 'error');
-    } finally {
-      setIsExportingPDF(false);
+  const handleReset = () => {
+    if (window.confirm('确定要清空当前内容并恢复默认示例数据吗？此操作不可撤销。')) {
+      resetState();
     }
   };
 
   return (
     <header className="editor-header">
       <div className="logo">
-        <Sparkles className="logo-icon" size={24} />
+        <SpikeMark className="logo-icon" size={26} />
         <h1>Resumify</h1>
       </div>
       <div className="header-actions">
@@ -84,6 +73,15 @@ export default function EditorHeader() {
         >
           <Download size={16} />
           <span>保存数据</span>
+        </button>
+        <button
+          id="btn-reset"
+          className="btn btn-secondary"
+          title="清空当前内容，恢复默认示例数据"
+          onClick={handleReset}
+        >
+          <RotateCcw size={16} />
+          <span>重置</span>
         </button>
         <button
           id="btn-print"

@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Briefcase, GraduationCap, FolderGit2, CheckCircle2, ChevronDown, Plus } from 'lucide-react';
-import { useResume } from '../../context/ResumeContext.jsx';
+import { useResumeData } from '../../context/ResumeContext.jsx';
 import { FORM_CONFIGS } from '../../constants/defaultState.js';
+import CollapseHeader from '../common/CollapseHeader.jsx';
 import FormCard from './FormCard.jsx';
 
 const SECTION_ICONS = {
@@ -19,7 +20,7 @@ const SECTION_DESCS = {
 };
 
 export default function DynamicListForm({ sectionType }) {
-  const { state, addSubitem, updateSubitem, deleteSubitem, moveSubitem } = useResume();
+  const { state, addSubitem, updateSubitem, deleteSubitem, moveSubitem } = useResumeData();
   const [collapsed, setCollapsed] = useState(false);
 
   const config = FORM_CONFIGS[sectionType];
@@ -31,13 +32,13 @@ export default function DynamicListForm({ sectionType }) {
 
   return (
     <section className={`control-card form-section ${collapsed ? 'collapsed' : ''}`} data-section-id={sectionType}>
-      <div className="section-header" onClick={() => setCollapsed(!collapsed)}>
+      <CollapseHeader collapsed={collapsed} onToggle={() => setCollapsed(!collapsed)} label={`展开或折叠${label}`}>
         <div className="header-title">
           <Icon size={18} />
           <h2>{label}</h2>
         </div>
         <ChevronDown className="toggle-icon" size={18} />
-      </div>
+      </CollapseHeader>
 
       <div className="section-content">
         <div className="items-list" id={`${sectionType}-items`}>

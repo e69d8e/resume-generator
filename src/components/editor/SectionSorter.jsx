@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { Eye, EyeOff, GripVertical } from 'lucide-react';
-import { useResume } from '../../context/ResumeContext.jsx';
+import { Eye, EyeOff, GripVertical, ChevronUp, ChevronDown } from 'lucide-react';
+import { useResumeData } from '../../context/ResumeContext.jsx';
 import { SECTION_NAMES } from '../../constants/defaultState.js';
 
 export default function SectionSorter() {
-  const { state, reorderSections, toggleSectionVisibility, toggleSectionColumn } = useResume();
+  const { state, reorderSections, toggleSectionVisibility, toggleSectionColumn } = useResumeData();
   const [draggedIndex, setDraggedIndex] = useState(null);
 
   const isTwoColumn = state.template === 'modern' || state.template === 'sidebar';
@@ -12,6 +12,8 @@ export default function SectionSorter() {
 
   const handleDragStart = (e, index) => {
     setDraggedIndex(index);
+    // Firefox 规范要求 drag 会话携带数据，否则拖拽不启动
+    e.dataTransfer.setData('text/plain', String(index));
     e.dataTransfer.effectAllowed = 'move';
   };
 
@@ -28,6 +30,9 @@ export default function SectionSorter() {
     setDraggedIndex(null);
   };
 
+  // 拖到列表外松手或按 Esc 取消时 drop 不会触发，必须靠 dragEnd 复位样式
+  const handleDragEnd = () => setDraggedIndex(null);
+
   return (
     <div className="sortable-list" id="sortable-sections">
       {order.map((section, index) => {
@@ -43,6 +48,7 @@ export default function SectionSorter() {
             onDragStart={(e) => handleDragStart(e, index)}
             onDragOver={(e) => handleDragOver(e, index)}
             onDrop={(e) => handleDrop(e, index)}
+            onDragEnd={handleDragEnd}
           >
             <div className="sortable-item-left">
               <span className="drag-handle">
@@ -52,6 +58,7 @@ export default function SectionSorter() {
                 type="button"
                 className={`visibility-btn ${isVisible ? 'visible' : 'hidden'}`}
                 title={isVisible ? '隐藏模块' : '显示模块'}
+                aria-label={isVisible ? `隐藏${displayName}` : `显示${displayName}`}
                 onClick={() => toggleSectionVisibility(section, !isVisible)}
               >
                 {isVisible ? <Eye size={14} /> : <EyeOff size={14} />}
@@ -61,7 +68,7 @@ export default function SectionSorter() {
               </span>
             </div>
 
-            <div className="sortable-item-right" onClick={(e) => e.stopPropagation()}>
+            <div className="sortable-item-right">
               {isTwoColumn && (
                 <button
                   type="button"
@@ -72,6 +79,29 @@ export default function SectionSorter() {
                   {isLeft ? '主栏' : '侧栏'}
                 </button>
               )}
+              {/* 触摸设备不支持 HTML5 拖拽，提供上下移按钮兜底 */}
+              <div className="move-btn-group">
+                <button
+                  type="button"
+                  className="move-btn"
+                  title="上移"
+                  aria-label={`上移${displayName}`}
+                  disabled={index === 0}
+                  onClick={() => reorderSections(index, index - 1)}
+                >
+                  <ChevronUp size={14} />
+                </button>
+                <button
+                  type="button"
+                  className="move-btn"
+                  title="下移"
+                  aria-label={`下移${displayName}`}
+                  disabled={index === order.length - 1}
+                  onClick={() => reorderSections(index, index + 1)}
+                >
+                  <ChevronDown size={14} />
+                </button>
+              </div>
             </div>
           </div>
         );

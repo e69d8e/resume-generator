@@ -1,0 +1,13 @@
+/*
+ * Resumify 样式总入口：按原单文件顺序 @import 各分区，级联顺序与拆分前完全一致。
+ * 分区边界依据原文件的区段注释，见 scripts/split-styles.cjs。
+ */
+@import './base.css';
+@import './resume-document.css';
+@import './template-modern.css';
+@import './template-elegant-sidebar.css';
+@import './editor-ux.css';
+@import './template-geek-minimal.css';
+@import './template-creative-compact.css';
+@import './print.css';
+@import './responsive.css';

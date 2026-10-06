@@ -1,10 +1,11 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Minimize2, Maximize2, RotateCcw } from 'lucide-react';
-import { useResume } from '../../context/ResumeContext.jsx';
+import { useResumeData, useResumeUI } from '../../context/ResumeContext.jsx';
 import { AVATAR_SHAPES } from '../../constants/defaultState.js';
 
 export default function AvatarCropModal() {
-  const { cropModal, closeCropModal, updatePersonal, state, showToast } = useResume();
+  const { state, updatePersonal } = useResumeData();
+  const { cropModal, closeCropModal, showToast } = useResumeUI();
   const [selectedShape, setSelectedShape] = useState('circle');
   const [zoom, setZoom] = useState(1);
   const [pos, setPos] = useState({ x: 0, y: 0 });
@@ -12,6 +13,7 @@ export default function AvatarCropModal() {
   const [naturalSize, setNaturalSize] = useState({ width: 0, height: 0 });
 
   const viewportRef = useRef(null);
+  const contentRef = useRef(null);
   const dragStartRef = useRef({ x: 0, y: 0 });
   const startPosRef = useRef({ x: 0, y: 0 });
 
@@ -20,12 +22,45 @@ export default function AvatarCropModal() {
   const viewportWidth = isRect ? 210 : 240;
   const viewportHeight = isRect ? 280 : 240;
 
+  // Dialog semantics: Esc 关闭、打开时移入焦点、Tab 在模态框内循环
+  useEffect(() => {
+    if (!cropModal.isOpen) return;
+    const content = contentRef.current;
+    if (content) content.focus();
+
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        e.stopPropagation();
+        closeCropModal();
+        return;
+      }
+      if (e.key !== 'Tab' || !content) return;
+      const focusables = content.querySelectorAll('button:not(:disabled), input:not(:disabled), [tabindex="0"]');
+      if (focusables.length === 0) return;
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown, true);
+    return () => document.removeEventListener('keydown', handleKeyDown, true);
+  }, [cropModal.isOpen, closeCropModal]);
+
   // Initialize shape from personal.avatarShape
   useEffect(() => {
     if (cropModal.isOpen) {
       const initialShape = state.personal?.avatarShape || 'circle';
       setSelectedShape(initialShape);
       setZoom(1);
+      // 重置平移与原图尺寸，避免连续裁剪时残留上一张图的状态
+      setPos({ x: 0, y: 0 });
+      setNaturalSize({ width: 0, height: 0 });
     }
   }, [cropModal.isOpen, state.personal?.avatarShape]);
 
@@ -86,17 +121,22 @@ export default function AvatarCropModal() {
     } catch {}
   }, []);
 
-  // Mouse wheel zoom
-  const onWheel = useCallback((e) => {
-    e.preventDefault();
-    const delta = e.deltaY < 0 ? 0.08 : -0.08;
-    setZoom(prev => {
-      const nextZoom = Math.min(4, Math.max(0.3, Math.round((prev + delta) * 100) / 100));
+  // Mouse wheel zoom: React 合成 onWheel 是 passive 的，preventDefault 无效，
+  // 必须用原生非 passive 监听才能阻止模态框背后的页面跟着滚动
+  useEffect(() => {
+    const viewport = viewportRef.current;
+    if (!cropModal.isOpen || !viewport) return;
+
+    const handleWheel = (e) => {
+      e.preventDefault();
+      const delta = e.deltaY < 0 ? 0.08 : -0.08;
+      const nextZoom = Math.min(3.5, Math.max(0.3, Math.round((zoom + delta) * 100) / 100));
+      setZoom(nextZoom);
       // Zoom toward center
       if (naturalSize.width > 0) {
         const baseScale = Math.max(viewportWidth / naturalSize.width, viewportHeight / naturalSize.height);
-        const oldW = naturalSize.width * baseScale * prev;
-        const oldH = naturalSize.height * baseScale * prev;
+        const oldW = naturalSize.width * baseScale * zoom;
+        const oldH = naturalSize.height * baseScale * zoom;
         const newW = naturalSize.width * baseScale * nextZoom;
         const newH = naturalSize.height * baseScale * nextZoom;
         setPos(p => ({
@@ -104,9 +144,11 @@ export default function AvatarCropModal() {
           y: p.y + (oldH - newH) / 2
         }));
       }
-      return nextZoom;
-    });
-  }, [naturalSize, viewportWidth, viewportHeight]);
+    };
+
+    viewport.addEventListener('wheel', handleWheel, { passive: false });
+    return () => viewport.removeEventListener('wheel', handleWheel);
+  }, [cropModal.isOpen, zoom, naturalSize, viewportWidth, viewportHeight]);
 
   const handleSliderZoomChange = (newZoom) => {
     if (naturalSize.width > 0) {
@@ -125,7 +167,10 @@ export default function AvatarCropModal() {
 
   // Confirm crop and export high-res canvas
   const handleConfirm = useCallback(() => {
-    if (!naturalSize.width || !naturalSize.height) return;
+    if (!naturalSize.width || !naturalSize.height) {
+      showToast('图片尚未加载完成，请稍候再试', 'error');
+      return;
+    }
 
     const canvas = document.createElement('canvas');
     const outWidth = isRect ? 360 : 400;
@@ -158,14 +203,25 @@ export default function AvatarCropModal() {
     const img = new Image();
     img.crossOrigin = 'anonymous';
     img.onload = () => {
+      // JPEG 无 alpha 通道，缩小时图片未覆盖视口会露出黑底，先铺白
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, outWidth, outHeight);
       ctx.drawImage(img, drawX, drawY, drawW, drawH);
       ctx.restore();
 
-      const croppedDataUrl = canvas.toDataURL('image/jpeg', 0.92);
-      updatePersonal('avatar', croppedDataUrl);
-      updatePersonal('avatarShape', selectedShape);
-      closeCropModal();
-      showToast('头像裁切完成！');
+      try {
+        const croppedDataUrl = canvas.toDataURL('image/jpeg', 0.92);
+        updatePersonal('avatar', croppedDataUrl);
+        updatePersonal('avatarShape', selectedShape);
+        closeCropModal();
+        showToast('头像裁切完成！');
+      } catch (err) {
+        console.error('Avatar crop failed:', err);
+        showToast('头像处理失败，请更换图片后重试', 'error');
+      }
+    };
+    img.onerror = () => {
+      showToast('图片加载失败，无法完成裁切', 'error');
     };
     img.src = cropModal.imageUrl;
   }, [naturalSize, isRect, viewportWidth, viewportHeight, zoom, pos, selectedShape, cropModal.imageUrl, updatePersonal, closeCropModal, showToast]);
@@ -178,17 +234,26 @@ export default function AvatarCropModal() {
 
   return (
     <div className="crop-modal" style={{ display: 'flex' }}>
-      <div className="crop-modal-backdrop" onClick={closeCropModal} />
-      <div className="crop-modal-content" style={{ width: isRect ? 380 : 360 }}>
+      <div className="crop-modal-backdrop" onClick={closeCropModal} aria-hidden="true" />
+      <div
+        ref={contentRef}
+        className="crop-modal-content"
+        role="dialog"
+        aria-modal="true"
+        aria-label="裁切与适配头像"
+        tabIndex={-1}
+        style={{ width: isRect ? 380 : 360, outline: 'none' }}
+      >
         <h3 className="crop-title">裁切与适配头像</h3>
 
         {/* Shape Switcher */}
-        <div className="crop-shape-selector">
+        <div className="crop-shape-selector" role="group" aria-label="头像形状">
           {AVATAR_SHAPES.map(s => (
             <button
               key={s.id}
               type="button"
               className={`crop-shape-btn ${selectedShape === s.id ? 'active' : ''}`}
+              aria-pressed={selectedShape === s.id}
               onClick={() => handleShapeChange(s.id)}
             >
               {s.name}
@@ -208,7 +273,6 @@ export default function AvatarCropModal() {
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}
           onPointerUp={onPointerUp}
-          onWheel={onWheel}
         >
           <img
             src={cropModal.imageUrl}
@@ -243,6 +307,7 @@ export default function AvatarCropModal() {
             max="3.5"
             step="0.01"
             value={zoom}
+            aria-label="缩放比例"
             onChange={(e) => handleSliderZoomChange(parseFloat(e.target.value))}
           />
           <Maximize2 size={16} />
@@ -250,6 +315,7 @@ export default function AvatarCropModal() {
             type="button"
             className="crop-reset-btn"
             title="重置居中"
+            aria-label="重置居中"
             onClick={() => {
               setZoom(1);
               if (naturalSize.width > 0) {

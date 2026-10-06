@@ -1,9 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { BookOpen, ChevronDown } from 'lucide-react';
-import { useResume } from '../../context/ResumeContext.jsx';
+import { useResumeData } from '../../context/ResumeContext.jsx';
+import CollapseHeader from '../common/CollapseHeader.jsx';
 
 export default function SummaryForm() {
-  const { state, updateSummary } = useResume();
+  const { state, updateSummary } = useResumeData();
   const [collapsed, setCollapsed] = useState(false);
   const textareaRef = useRef(null);
 
@@ -16,18 +17,18 @@ export default function SummaryForm() {
   };
 
   useEffect(() => {
-    adjustHeight();
+    if (!collapsed) adjustHeight();
   }, [state.summary, collapsed]);
 
   return (
     <section className={`control-card form-section ${collapsed ? 'collapsed' : ''}`} data-section-id="summary">
-      <div className="section-header" onClick={() => setCollapsed(!collapsed)}>
+      <CollapseHeader collapsed={collapsed} onToggle={() => setCollapsed(!collapsed)} label="展开或折叠自我评价">
         <div className="header-title">
           <BookOpen size={18} />
           <h2>个人优势 / 自我评价 (Summary)</h2>
         </div>
         <ChevronDown className="toggle-icon" size={18} />
-      </div>
+      </CollapseHeader>
       <div className="section-content">
         <div className="input-group full-width">
           <label htmlFor="info-summary">自我评价 (简短有力，3-4句话为佳)</label>

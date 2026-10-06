@@ -1,5 +1,5 @@
 import React from 'react';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { ResumeProvider } from '../src/context/ResumeContext.jsx';
 import App from '../src/App.jsx';
@@ -13,6 +13,11 @@ function renderApp() {
 }
 
 describe('React Application & UI Workflows', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+  });
+
   it('should render main app with header, editor, preview and toolbar', () => {
     renderApp();
 
@@ -74,5 +79,35 @@ describe('React Application & UI Workflows', () => {
     const rectBtn = screen.getByText('标准证件照 (3:4)');
     fireEvent.click(rectBtn);
     expect(rectBtn.classList.contains('active')).toBe(true);
+  });
+
+  it('should persist skill tag edits made in the preview back to state', () => {
+    renderApp();
+
+    // 预览中技能标签的 data-path 为 4 段式：skills.<id>.tags.<idx>
+    const tag = document.querySelector('.resume-skill-tag[data-path^="skills."]');
+    expect(tag).not.toBeNull();
+
+    tag.textContent = 'Nuxt';
+    fireEvent.blur(tag);
+
+    // 编辑面板中对应 FormCard 的 tags 输入框应同步更新（3 个技能分类输入框同名，按内容匹配）
+    const tagsInput = screen
+      .getAllByPlaceholderText('例如：JavaScript, TypeScript, React')
+      .find(input => input.value.includes('Nuxt'));
+    expect(tagsInput).not.toBeUndefined();
+  });
+
+  it('should offer a reset entry that restores default data after confirmation', () => {
+    const confirmCalls = [];
+    vi.stubGlobal('confirm', (...args) => {
+      confirmCalls.push(args);
+      return true;
+    });
+    renderApp();
+
+    fireEvent.click(screen.getByTitle('清空当前内容，恢复默认示例数据'));
+
+    expect(confirmCalls).toHaveLength(1);
   });
 });

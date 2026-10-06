@@ -6,6 +6,12 @@ export const DEFAULT_SECTION_COLUMNS = {
   education: 'right'
 };
 
+// 预览缩放边界（比例值），输入框按百分比 40~150 校验
+export const ZOOM_MIN = 0.4;
+export const ZOOM_MAX = 1.5;
+export const ZOOM_STEP = 0.05;
+export const ZOOM_FIT_CAP = 1.2;
+
 export const SPACING_MAP = {
   'spacing-compact': 16,
   'spacing-normal': 20,
@@ -126,7 +132,7 @@ export const DEFAULT_STATE = {
   personal: {
     name: '张三',
     title: '资深项目经理 / 运营主管',
-    avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=256&auto=format&fit=crop',
+    avatar: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIAAAACACAYAAADDPmHLAAAC7UlEQVR42u3cOXbbQBBF0dp/7NypV2OJFEeAAAHOsryHcmQr8HAkq5vo6v+CtwDUv6dD2Pfr6KSbcQQAcAgAkC6Ay+Ckm71cBifdAAAAjgAAAgABgDQB7J10s5fz3kk3+3beO+kGAABwBACQMoDeSTcAyAM49U66AQAAHEEawPOpd9INAADonHQDAAA4gjaAY+ekmzyAL58/AUBl6PcmAeB27LzW/mf0v1Xrjex23HltpRz+dwh13coYXhuCMb42Arsddh69Kcb/hSD47YzxtREY42sjsNuh9YiVNP4rgnh3NMbXRmDXQ+uRKnn8n0W6JwAAwPjKCOw6th6lUACC3NQYXxuBXcfGIxQTQPl3BQAAGF8ZgV3GxksvMoDSbwsAeQBD46UXGkDhtwUAALZeerEBlH1bY3xtBLwAvAAAAAAAdAGch62XXmQApd/WzvuNl15oAIXfFgAAKB9AVAQR7goAAAAAACCQHB8AAHA79WuPVITxI90TAACIBaB0BNFuGRJAqQgi3jEsgNIQRL1haAClIIh8v/AApkYQ/XZ26lZeQ5OMX8Hd7NitvJbuOX4tN6sKwD0g1HarKgHkgFDrjaoG8FEMCneRAfAvGMrfb8du6aQbAOQB7JZOugFAHcBht3TSDQAA4AjiABZOugFAHkC7cNINAADgCNIAxnbhJVTDz6DeWwl3N8bXRmBj++RTpjz+K4Lp7m+Mr43AGF8bgY3Nk08Rg/8BwAQ7GONrIzDG10ZgYzP3e8bAbwFwvz1saOZ+rxj37d1rE2N8bQQAkAewnXvuGPMDCDJvAwAAML4yAhu2M88ZA6YAkG8fAKgD2G9nnivGS1eujQAAAABoA9jMPEeMlgFBhp0AAIBHzxGD5QCQficAAIDxlREAQB1Av3n01DFUvlJvZf360VPHUBkBJN7K+vWDp46hcgJIuxUAAAAAAAAAAAAAAOMLIrBu/eCpY6R8pd7KutVXTx1DZQSQeCsAAAAAAACALIAfHOnFCRkUqm4AAAAASUVORK5CYII=',
     avatarShape: 'circle',
     email: 'zhangsan@example.com',
     phone: '138-1234-5678',

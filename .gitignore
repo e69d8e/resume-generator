@@ -2,7 +2,11 @@
 node_modules/
 dist/
 *.log
+.env*
+coverage/
 .netlify/
 .playwright-cli/
 .agents/
 .claude/
+.zcode/
+.zcodeignore

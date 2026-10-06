@@ -1,5 +1,14 @@
 import { SPACING_MAP } from '../constants/defaultState.js';
 
+const HTML_ESCAPE_MAP = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+
+// 用户数据拼接进 HTML 模板前必须经过此函数，否则经 dangerouslySetInnerHTML 构成 XSS
+export function escapeHTML(value) {
+  return String(value ?? '').replace(/[&<>"']/g, (ch) => HTML_ESCAPE_MAP[ch]);
+}
+
+const esc = escapeHTML;
+
 export class MeasurementCache {
   constructor(maxSize = 800) {
     this.cache = new Map();
@@ -67,18 +76,21 @@ export function measureContentHeight(htmlContent, columnClass = '', state = {}) 
   measureDiv.style.padding = `0 ${pad}px`;
 
   if (columnClass) {
+    // 沙盒必须保留双列结构（被测列 + 空占位列），让模板 CSS 的列宽/grid/flex
+    // 规则自然生效。若强制 width:auto，测得的行宽会接近整页宽，行数偏少、
+    // 高度系统性低估，最终内容被 .resume-page 的 overflow:hidden 静默裁切
     let wrapHTML = '';
     if (currentTemplate === 'modern') {
       if (columnClass === 'main-col') {
-        wrapHTML = `<div class="resume-body" style="margin:0;padding:0;border:none;"><div class="main-col" style="margin:0;padding:0;border:none;float:none;width:auto;height:auto;">${htmlContent}</div></div>`;
+        wrapHTML = `<div class="resume-body" style="margin:0;padding:0;border:none;"><div class="main-col">${htmlContent}</div><div class="side-col"></div></div>`;
       } else {
-        wrapHTML = `<div class="resume-body" style="margin:0;padding:0;border:none;"><div class="main-col" style="margin:0;padding:0;border:none;float:none;width:auto;height:auto;"></div><div class="side-col" style="margin:0;padding:0;border:none;float:none;width:auto;height:auto;">${htmlContent}</div></div>`;
+        wrapHTML = `<div class="resume-body" style="margin:0;padding:0;border:none;"><div class="main-col"></div><div class="side-col">${htmlContent}</div></div>`;
       }
     } else if (currentTemplate === 'sidebar') {
       if (columnClass === 'sidebar-col') {
-        wrapHTML = `<div class="resume-body" style="margin:0;padding:0;border:none;"><div class="sidebar-col" style="margin:0;padding:0;border:none;float:none;width:auto;height:auto;">${htmlContent}</div></div>`;
+        wrapHTML = `<div class="resume-body" style="margin:0;padding:0;border:none;"><div class="sidebar-col">${htmlContent}</div><div class="main-col"></div></div>`;
       } else {
-        wrapHTML = `<div class="resume-body" style="margin:0;padding:0;border:none;"><div class="sidebar-col" style="margin:0;padding:0;border:none;float:none;width:auto;height:auto;"></div><div class="main-col" style="margin:0;padding:0;border:none;float:none;width:auto;height:auto;">${htmlContent}</div></div>`;
+        wrapHTML = `<div class="resume-body" style="margin:0;padding:0;border:none;"><div class="sidebar-col"></div><div class="main-col">${htmlContent}</div></div>`;
       }
     } else {
       wrapHTML = htmlContent;
@@ -112,7 +124,7 @@ export function buildContactItemsHTML(p = {}, format = 'icon') {
       ['github', 'GitHub：'], ['linkedin', 'LinkedIn：'], ['website', '网 站：']
     ];
     labelContacts.forEach(([field, label]) => {
-      if (p[field]) items.push(`<div class="contact-item"><span class="contact-label">${label}</span><span contenteditable="true" data-path="personal.${field}">${p[field]}</span></div>`);
+      if (p[field]) items.push(`<div class="contact-item"><span class="contact-label">${label}</span><span contenteditable="true" data-path="personal.${field}">${esc(p[field])}</span></div>`);
     });
   } else {
     const iconContacts = [
@@ -123,7 +135,7 @@ export function buildContactItemsHTML(p = {}, format = 'icon') {
     iconContacts.forEach(([field, icon]) => {
       if (p[field]) {
         const iconHTML = BRAND_ICONS[field] || `<span class="contact-icon-dot">•</span>`;
-        items.push(`<div class="contact-item">${iconHTML}<span contenteditable="true" data-path="personal.${field}">${p[field]}</span></div>`);
+        items.push(`<div class="contact-item">${iconHTML}<span contenteditable="true" data-path="personal.${field}">${esc(p[field])}</span></div>`);
       }
     });
   }
@@ -133,7 +145,7 @@ export function buildContactItemsHTML(p = {}, format = 'icon') {
 export function renderHeaderTemplateHTML(state) {
   const p = state.personal || {};
   const shape = p.avatarShape || 'circle';
-  const avatarHTML = p.avatar ? `<div class="avatar-container shape-${shape}"><img src="${p.avatar}" alt="${p.name || ''}" class="avatar-img shape-${shape}" /></div>` : '';
+  const avatarHTML = p.avatar ? `<div class="avatar-container shape-${shape}"><img src="${esc(p.avatar)}" alt="${esc(p.name || '')}" class="avatar-img shape-${esc(shape)}" /></div>` : '';
 
   if (state.template === 'sidebar') {
     // Sidebar template renders header inside body
@@ -147,8 +159,8 @@ export function renderHeaderTemplateHTML(state) {
       <header class="resume-header ${hasAvatarClass}">
         ${avatarHTML}
         <div class="header-text-container">
-          <h1 class="resume-name" contenteditable="true" data-path="personal.name">${p.name || ''}</h1>
-          <div class="resume-title" contenteditable="true" data-path="personal.title">${p.title || ''}</div>
+          <h1 class="resume-name" contenteditable="true" data-path="personal.name">${esc(p.name || '')}</h1>
+          <div class="resume-title" contenteditable="true" data-path="personal.title">${esc(p.title || '')}</div>
           <div class="header-contacts">${contactsList.join('')}</div>
         </div>
       </header>
@@ -160,8 +172,8 @@ export function renderHeaderTemplateHTML(state) {
     return `
       <header class="resume-header geek-header">
         <div class="header-info-main">
-          <h1 class="resume-name" contenteditable="true" data-path="personal.name">${p.name || ''}</h1>
-          <div class="resume-title" contenteditable="true" data-path="personal.title">${p.title || ''}</div>
+          <h1 class="resume-name" contenteditable="true" data-path="personal.name">${esc(p.name || '')}</h1>
+          <div class="resume-title" contenteditable="true" data-path="personal.title">${esc(p.title || '')}</div>
           <div class="header-contacts-grid">${contactsList.join('')}</div>
         </div>
         ${avatarHTML}
@@ -177,8 +189,8 @@ export function renderHeaderTemplateHTML(state) {
           ${avatarHTML}
           <div class="header-info-main">
             <div class="creative-name-wrap">
-              <h1 class="resume-name" contenteditable="true" data-path="personal.name">${p.name || ''}</h1>
-              <div class="resume-title" contenteditable="true" data-path="personal.title">${p.title || ''}</div>
+              <h1 class="resume-name" contenteditable="true" data-path="personal.name">${esc(p.name || '')}</h1>
+              <div class="resume-title" contenteditable="true" data-path="personal.title">${esc(p.title || '')}</div>
             </div>
             <div class="header-contacts">${contactsList.join('')}</div>
           </div>
@@ -194,8 +206,8 @@ export function renderHeaderTemplateHTML(state) {
       <header class="resume-header compact-header ${hasAvatarClass}">
         <div class="compact-header-top">
           <div class="header-info-main">
-            <h1 class="resume-name" contenteditable="true" data-path="personal.name">${p.name || ''}</h1>
-            <div class="resume-title" contenteditable="true" data-path="personal.title">${p.title || ''}</div>
+            <h1 class="resume-name" contenteditable="true" data-path="personal.name">${esc(p.name || '')}</h1>
+            <div class="resume-title" contenteditable="true" data-path="personal.title">${esc(p.title || '')}</div>
             <div class="header-contacts">${contactsList.join('')}</div>
           </div>
           ${avatarHTML}
@@ -210,8 +222,8 @@ export function renderHeaderTemplateHTML(state) {
   return `
     <header class="resume-header">
       <div class="header-info-main">
-        <h1 class="resume-name" contenteditable="true" data-path="personal.name">${p.name || ''}</h1>
-        <div class="resume-title" contenteditable="true" data-path="personal.title">${p.title || ''}</div>
+        <h1 class="resume-name" contenteditable="true" data-path="personal.name">${esc(p.name || '')}</h1>
+        <div class="resume-title" contenteditable="true" data-path="personal.title">${esc(p.title || '')}</div>
         <div class="header-contacts">${contactsList.join('')}</div>
       </div>
       ${avatarHTML}
@@ -225,7 +237,7 @@ export function renderSectionItemsHTML(sectionKey, state) {
     return `
       <section class="resume-section section-summary">
         <div class="resume-section-title"><span>自我评价</span></div>
-        <div class="resume-summary" contenteditable="true" data-path="summary">${state.summary}</div>
+        <div class="resume-summary" contenteditable="true" data-path="summary">${esc(state.summary)}</div>
       </section>`;
   }
 
@@ -235,16 +247,16 @@ export function renderSectionItemsHTML(sectionKey, state) {
     const itemsHTML = list.map(item => `
       <div class="resume-item">
         <div class="resume-item-header">
-          <span contenteditable="true" data-path="experience.${item.id}.company">${item.company}</span>
+          <span contenteditable="true" data-path="experience.${esc(item.id)}.company">${esc(item.company)}</span>
           <span class="resume-item-date">
-            <span contenteditable="true" data-path="experience.${item.id}.startDate">${item.startDate}</span> ~
-            <span contenteditable="true" data-path="experience.${item.id}.endDate">${item.endDate}</span>
+            <span contenteditable="true" data-path="experience.${esc(item.id)}.startDate">${esc(item.startDate)}</span> ~
+            <span contenteditable="true" data-path="experience.${esc(item.id)}.endDate">${esc(item.endDate)}</span>
           </span>
         </div>
         <div class="resume-item-sub">
-          <span contenteditable="true" data-path="experience.${item.id}.role">${item.role}</span>
+          <span contenteditable="true" data-path="experience.${esc(item.id)}.role">${esc(item.role)}</span>
         </div>
-        <div class="resume-item-description" contenteditable="true" data-path="experience.${item.id}.description">${item.description}</div>
+        <div class="resume-item-description" contenteditable="true" data-path="experience.${esc(item.id)}.description">${esc(item.description)}</div>
       </div>
     `).join('');
     return `
@@ -260,14 +272,14 @@ export function renderSectionItemsHTML(sectionKey, state) {
     const itemsHTML = list.map(item => `
       <div class="resume-item">
         <div class="resume-item-header">
-          <span contenteditable="true" data-path="education.${item.id}.institution">${item.institution}</span>
-          <span class="resume-item-date" contenteditable="true" data-path="education.${item.id}.startDate">${item.startDate}</span>
+          <span contenteditable="true" data-path="education.${esc(item.id)}.institution">${esc(item.institution)}</span>
+          <span class="resume-item-date" contenteditable="true" data-path="education.${esc(item.id)}.startDate">${esc(item.startDate)}</span>
         </div>
         <div class="resume-item-sub">
-          <span contenteditable="true" data-path="education.${item.id}.degree">${item.degree}</span> -
-          <span contenteditable="true" data-path="education.${item.id}.major">${item.major}</span>
+          <span contenteditable="true" data-path="education.${esc(item.id)}.degree">${esc(item.degree)}</span> -
+          <span contenteditable="true" data-path="education.${esc(item.id)}.major">${esc(item.major)}</span>
         </div>
-        ${item.description ? `<div class="resume-item-description" contenteditable="true" data-path="education.${item.id}.description">${item.description}</div>` : ''}
+        ${item.description ? `<div class="resume-item-description" contenteditable="true" data-path="education.${esc(item.id)}.description">${esc(item.description)}</div>` : ''}
       </div>
     `).join('');
     return `
@@ -283,25 +295,25 @@ export function renderSectionItemsHTML(sectionKey, state) {
     const itemsHTML = list.map(item => {
       const dateHTML = (item.startDate || item.endDate) ? `
         <span class="resume-item-date">
-          <span contenteditable="true" data-path="projects.${item.id}.startDate">${item.startDate || ''}</span>
+          <span contenteditable="true" data-path="projects.${esc(item.id)}.startDate">${esc(item.startDate || '')}</span>
           ${(item.startDate && item.endDate) ? ' ~ ' : ''}
-          <span contenteditable="true" data-path="projects.${item.id}.endDate">${item.endDate || ''}</span>
+          <span contenteditable="true" data-path="projects.${esc(item.id)}.endDate">${esc(item.endDate || '')}</span>
         </span>` : '';
-      const techHTML = item.techStack ? `<div class="project-tech-stack"><strong class="tech-stack-label">技术栈：</strong><span class="tech-stack-val" contenteditable="true" data-path="projects.${item.id}.techStack">${item.techStack}</span></div>` : '';
-      const linkHTML = item.link ? `<span class="project-link-label"><span class="link-icon">🔗</span> <span>链接:</span> <span contenteditable="true" data-path="projects.${item.id}.link" class="project-link-url">${item.link}</span></span>` : '';
+      const techHTML = item.techStack ? `<div class="project-tech-stack"><strong class="tech-stack-label">技术栈：</strong><span class="tech-stack-val" contenteditable="true" data-path="projects.${esc(item.id)}.techStack">${esc(item.techStack)}</span></div>` : '';
+      const linkHTML = item.link ? `<span class="project-link-label"><span class="link-icon">🔗</span> <span>链接:</span> <span contenteditable="true" data-path="projects.${esc(item.id)}.link" class="project-link-url">${esc(item.link)}</span></span>` : '';
       const subHTML = (techHTML || linkHTML) ? `<div class="resume-item-sub">${techHTML}${linkHTML}</div>` : '';
       return `
         <div class="resume-item">
           <div class="resume-item-header">
             <span class="project-name-role">
-              <span contenteditable="true" data-path="projects.${item.id}.name" style="font-weight: 700;">${item.name}</span>
+              <span contenteditable="true" data-path="projects.${esc(item.id)}.name" style="font-weight: 700;">${esc(item.name)}</span>
               <span class="project-role-sep">·</span>
-              <span contenteditable="true" data-path="projects.${item.id}.role" class="project-role">${item.role}</span>
+              <span contenteditable="true" data-path="projects.${esc(item.id)}.role" class="project-role">${esc(item.role)}</span>
             </span>
             ${dateHTML}
           </div>
           ${subHTML}
-          <div class="resume-item-description" contenteditable="true" data-path="projects.${item.id}.description">${item.description}</div>
+          <div class="resume-item-description" contenteditable="true" data-path="projects.${esc(item.id)}.description">${esc(item.description)}</div>
         </div>`;
     }).join('');
     return `
@@ -316,10 +328,10 @@ export function renderSectionItemsHTML(sectionKey, state) {
     if (list.length === 0) return '';
     const itemsHTML = list.map(item => {
       const tags = (item.tags || '').split(',').map(tag => tag.trim()).filter(tag => tag.length > 0);
-      const tagsHTML = tags.map((tag, tagIdx) => `<span class="resume-skill-tag" contenteditable="true" data-path="skills.${item.id}.tags.${tagIdx}">${tag}</span>`).join('');
+      const tagsHTML = tags.map((tag, tagIdx) => `<span class="resume-skill-tag" contenteditable="true" data-path="skills.${esc(item.id)}.tags.${tagIdx}">${esc(tag)}</span>`).join('');
       return `
         <div class="resume-skill-cat">
-          <div class="resume-skill-cat-name" contenteditable="true" data-path="skills.${item.id}.category">${item.category}</div>
+          <div class="resume-skill-cat-name" contenteditable="true" data-path="skills.${esc(item.id)}.category">${esc(item.category)}</div>
           <div class="resume-skill-tags">${tagsHTML}</div>
         </div>`;
     }).join('');
@@ -359,11 +371,11 @@ export function renderFullResumeHTML(state) {
     const sideSections = (state.sectionOrder || []).filter(s => (state.sectionColumns?.[s] || 'left') === 'right');
     const p = state.personal || {};
     const shape = p.avatarShape || 'circle';
-    const avatarHTML = p.avatar ? `<div class="avatar-container shape-${shape}"><img src="${p.avatar}" alt="${p.name || ''}" class="avatar-img shape-${shape}" /></div>` : '';
+    const avatarHTML = p.avatar ? `<div class="avatar-container shape-${shape}"><img src="${esc(p.avatar)}" alt="${esc(p.name || '')}" class="avatar-img shape-${esc(shape)}" /></div>` : '';
     const contactsList = buildContactItemsHTML(p, 'icon');
     bodyHTML = `<div class="resume-body">
       <div class="sidebar-col">${avatarHTML}<div class="sidebar-contacts">${contactsList.join('')}</div>${renderSectionsHTML(sideSections, state)}</div>
-      <div class="main-col"><h1 class="resume-name" contenteditable="true" data-path="personal.name">${p.name || ''}</h1><div class="resume-title" contenteditable="true" data-path="personal.title">${p.title || ''}</div>${renderSectionsHTML(mainSections, state)}</div>
+      <div class="main-col"><h1 class="resume-name" contenteditable="true" data-path="personal.name">${esc(p.name || '')}</h1><div class="resume-title" contenteditable="true" data-path="personal.title">${esc(p.title || '')}</div>${renderSectionsHTML(mainSections, state)}</div>
     </div>`;
   } else {
     bodyHTML = `<div class="resume-body">${renderSectionsHTML(state.sectionOrder, state)}</div>`;
@@ -520,7 +532,9 @@ export function paginateContent(headerHTML, bodyHTML, state) {
 
   const measureCache = new Map();
   function cachedMeasure(html, colClass) {
-    const key = `${html.length}|${colClass || ''}|${html.slice(0, 100)}`;
+    // 与 MeasurementCache 相同的"长度+前后缀"key：同类型 section 的前 100
+    // 字符完全相同，仅靠长度+前缀会碰撞并返回错误高度
+    const key = `${html.length}|${colClass || ''}|${html.slice(0, 80)}|${html.slice(-80)}`;
     let h = measureCache.get(key);
     if (h === undefined) {
       h = measureContentHeight(html, colClass, state);
@@ -530,7 +544,7 @@ export function paginateContent(headerHTML, bodyHTML, state) {
   }
 
   const headerHeight = cachedMeasure(headerHTML);
-  const continuationHeaderHTML = `<div class="resume-continuation-header"><span class="continuation-name">${state.personal?.name || ''}</span><span class="continuation-divider">·</span><span class="continuation-page">第 2 页</span></div>`;
+  const continuationHeaderHTML = `<div class="resume-continuation-header"><span class="continuation-name">${esc(state.personal?.name || '')}</span><span class="continuation-divider">·</span><span class="continuation-page">第 2 页</span></div>`;
   const continuationHeaderHeight = cachedMeasure(continuationHeaderHTML);
 
   if (state.template === 'modern' || state.template === 'sidebar') {

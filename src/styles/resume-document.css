@@ -1,0 +1,432 @@
+/* ==========================================
+   RESUME DOCUMENT LAYOUT & THEMES
+   ========================================== */
+
+.resume-paper {
+  background-color: #ffffff;
+  color: #1e293b;
+  width: 210mm;
+  min-height: 297mm;
+  padding: 30px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3), 0 2px 8px rgba(0, 0, 0, 0.2);
+  transition: background-color 0.3s, color 0.3s;
+  position: relative;
+  text-align: left;
+  /* Multi-page support */
+  page-break-after: auto;
+}
+
+/* Multi-page resume page */
+.resume-page {
+  background-color: #ffffff;
+  color: #1e293b;
+  width: 210mm;
+  height: 297mm;
+  padding: var(--pad, 30px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3), 0 2px 8px rgba(0, 0, 0, 0.2);
+  position: relative;
+  text-align: left;
+  overflow: hidden;
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
+
+/* Continuation header for pages after the first */
+.resume-continuation-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 8px;
+  margin-bottom: 14px;
+  border-bottom: 1.5px solid var(--accent-border-strong, rgba(15, 118, 110, 0.20));
+  font-size: 11px;
+  color: var(--text-main, #334155);
+}
+
+.continuation-name {
+  font-weight: 700;
+  color: var(--primary, #1e293b);
+  font-size: 12px;
+  letter-spacing: 0.3px;
+}
+
+.continuation-divider {
+  flex: 1;
+  text-align: center;
+  color: var(--accent, #0f766e);
+  opacity: 0.4;
+  font-size: 10px;
+}
+
+.continuation-page {
+  font-size: 11px;
+  color: var(--accent, #0f766e);
+  font-weight: 500;
+}
+
+/* Resume Themes styling variables mappings */
+/* Resume Themes styling variables mappings (Refined Low-Saturation Editorial Palette) */
+/* Presets: Theme-Navy (玄青蓝) */
+.resume-paper.theme-navy,
+.resume-page.theme-navy {
+  --primary: #1e293b;
+  --accent: #486581;
+  --accent-light: rgba(72, 101, 129, 0.08);
+  --accent-border-strong: rgba(72, 101, 129, 0.22);
+  --accent-border: rgba(72, 101, 129, 0.14);
+  --accent-border-light: rgba(72, 101, 129, 0.08);
+  --sidebar-bg-start: #f4f6f8;
+  --sidebar-bg-end: #fafbfc;
+  --text-main: #334155;
+  --text-dark: #0f172a;
+}
+/* Presets: Theme-Emerald (松石灰) */
+.resume-paper.theme-emerald,
+.resume-page.theme-emerald {
+  --primary: #1f3a38;
+  --accent: #4a7c76;
+  --accent-light: rgba(74, 124, 118, 0.08);
+  --accent-border-strong: rgba(74, 124, 118, 0.22);
+  --accent-border: rgba(74, 124, 118, 0.14);
+  --accent-border-light: rgba(74, 124, 118, 0.08);
+  --sidebar-bg-start: #f2f6f5;
+  --sidebar-bg-end: #fafcfb;
+  --text-main: #344743;
+  --text-dark: #122926;
+}
+/* Presets: Theme-Wine (栗壳棕) */
+.resume-paper.theme-wine,
+.resume-page.theme-wine {
+  --primary: #382f2d;
+  --accent: #7c655b;
+  --accent-light: rgba(124, 101, 91, 0.08);
+  --accent-border-strong: rgba(124, 101, 91, 0.22);
+  --accent-border: rgba(124, 101, 91, 0.14);
+  --accent-border-light: rgba(124, 101, 91, 0.08);
+  --sidebar-bg-start: #f7f4f3;
+  --sidebar-bg-end: #fcfbfa;
+  --text-main: #4a3e3c;
+  --text-dark: #241c1a;
+}
+/* Presets: Theme-Indigo (灰霁蓝) */
+.resume-paper.theme-indigo,
+.resume-page.theme-indigo {
+  --primary: #1f2d3d;
+  --accent: #576574;
+  --accent-light: rgba(87, 101, 116, 0.08);
+  --accent-border-strong: rgba(87, 101, 116, 0.22);
+  --accent-border: rgba(87, 101, 116, 0.14);
+  --accent-border-light: rgba(87, 101, 116, 0.08);
+  --sidebar-bg-start: #f3f5f8;
+  --sidebar-bg-end: #fafbfc;
+  --text-main: #3b4856;
+  --text-dark: #131d27;
+}
+/* Presets: Theme-Dark (暗夜黑) */
+.resume-paper.theme-dark,
+.resume-page.theme-dark {
+  --primary: #18181b;
+  --accent: #52525b;
+  --accent-light: rgba(82, 82, 91, 0.08);
+  --accent-border-strong: rgba(82, 82, 91, 0.22);
+  --accent-border: rgba(82, 82, 91, 0.14);
+  --accent-border-light: rgba(82, 82, 91, 0.08);
+  --sidebar-bg-start: #f4f4f5;
+  --sidebar-bg-end: #fafafa;
+  --text-main: #3f3f46;
+  --text-dark: #09090b;
+}
+
+/* Presets: Theme-Amber (陶土褐) */
+.resume-paper.theme-amber,
+.resume-page.theme-amber {
+  --primary: #3d2b27;
+  --accent: #8a6152;
+  --accent-light: rgba(138, 97, 82, 0.08);
+  --accent-border-strong: rgba(138, 97, 82, 0.22);
+  --accent-border: rgba(138, 97, 82, 0.14);
+  --accent-border-light: rgba(138, 97, 82, 0.08);
+  --sidebar-bg-start: #f8f4f2;
+  --sidebar-bg-end: #fdfbfa;
+  --text-main: #523e38;
+  --text-dark: #271a17;
+}
+
+/* Presets: Theme-Slate (烟青灰) */
+.resume-paper.theme-slate,
+.resume-page.theme-slate {
+  --primary: #262c36;
+  --accent: #5c6b73;
+  --accent-light: rgba(92, 107, 115, 0.08);
+  --accent-border-strong: rgba(92, 107, 115, 0.22);
+  --accent-border: rgba(92, 107, 115, 0.14);
+  --accent-border-light: rgba(92, 107, 115, 0.08);
+  --sidebar-bg-start: #f3f5f6;
+  --sidebar-bg-end: #fafbfb;
+  --text-main: #3e4852;
+  --text-dark: #151a20;
+}
+
+/* Presets: Theme-Sand (暖麦杏) */
+.resume-paper.theme-sand,
+.resume-page.theme-sand {
+  --primary: #403531;
+  --accent: #8c766b;
+  --accent-light: rgba(140, 118, 107, 0.08);
+  --accent-border-strong: rgba(140, 118, 107, 0.22);
+  --accent-border: rgba(140, 118, 107, 0.14);
+  --accent-border-light: rgba(140, 118, 107, 0.08);
+  --sidebar-bg-start: #f7f5f2;
+  --sidebar-bg-end: #fcfbf9;
+  --text-main: #504440;
+  --text-dark: #271f1b;
+}
+
+/* Presets: Theme-Olive (云杉绿) */
+.resume-paper.theme-olive,
+.resume-page.theme-olive {
+  --primary: #24332b;
+  --accent: #526e5e;
+  --accent-light: rgba(82, 110, 94, 0.08);
+  --accent-border-strong: rgba(82, 110, 94, 0.22);
+  --accent-border: rgba(82, 110, 94, 0.14);
+  --accent-border-light: rgba(82, 110, 94, 0.08);
+  --sidebar-bg-start: #f2f5f3;
+  --sidebar-bg-end: #fbfdfc;
+  --text-main: #3a4b41;
+  --text-dark: #14211a;
+}
+
+/* Presets: Theme-Rose (干枯玫瑰) */
+.resume-paper.theme-rose,
+.resume-page.theme-rose {
+  --primary: #38262a;
+  --accent: #855c65;
+  --accent-light: rgba(133, 92, 101, 0.08);
+  --accent-border-strong: rgba(133, 92, 101, 0.22);
+  --accent-border: rgba(133, 92, 101, 0.14);
+  --accent-border-light: rgba(133, 92, 101, 0.08);
+  --sidebar-bg-start: #f7f3f4;
+  --sidebar-bg-end: #fdfbfc;
+  --text-main: #4d3a3d;
+  --text-dark: #221417;
+}
+
+/* Resume Typography Styles */
+.resume-paper.font-sans,
+.resume-page.font-sans,
+.resume-measure-sandbox.font-sans {
+  font-family: 'Inter', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', 'Heiti SC', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+}
+.resume-paper.font-serif,
+.resume-page.font-serif,
+.resume-measure-sandbox.font-serif {
+  font-family: 'Outfit', 'Noto Serif SC', 'Songti SC', 'BiauKai', 'Playfair Display', Georgia, Cambria, serif;
+}
+.resume-paper.font-tech,
+.resume-page.font-tech,
+.resume-measure-sandbox.font-tech {
+  font-family: 'STKaiti', 'KaiTi', '楷体', 'PingFang SC', 'Microsoft YaHei', 'Heiti SC', sans-serif;
+  font-size: 14.5px;
+}
+
+/* Spacing Options */
+.resume-paper.spacing-compact,
+.resume-page.spacing-compact,
+.resume-measure-sandbox.spacing-compact {
+  --sec-gap: 8px;
+  --item-gap: 3px;
+  --pad: 16px;
+  font-size: 11px;
+  line-height: 1.25;
+}
+.resume-paper.spacing-normal,
+.resume-page.spacing-normal,
+.resume-measure-sandbox.spacing-normal {
+  --sec-gap: 12px;
+  --item-gap: 5px;
+  --pad: 20px;
+  font-size: 12px;
+  line-height: 1.35;
+}
+.resume-paper.spacing-comfortable,
+.resume-page.spacing-comfortable,
+.resume-measure-sandbox.spacing-comfortable {
+  --sec-gap: 16px;
+  --item-gap: 8px;
+  --pad: 26px;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.resume-measure-sandbox {
+  background-color: #ffffff;
+  color: #1e293b;
+  width: 210mm;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  box-sizing: border-box;
+  text-align: left;
+  display: flow-root !important;
+  position: absolute;
+  left: -99999px;
+  top: -99999px;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.resume-paper {
+  padding: var(--pad);
+}
+
+/* Elements base styling inside Resume */
+.resume-section {
+  margin-bottom: var(--sec-gap);
+}
+
+.resume-section-title {
+  color: var(--primary);
+  font-weight: 700;
+  font-size: 13px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  border-bottom: 2px solid var(--accent);
+  padding-bottom: 3px;
+  margin-bottom: var(--item-gap);
+  display: flex;
+  align-items: center;
+}
+
+.resume-paper.font-serif .resume-section-title {
+  font-family: 'Noto Serif SC', serif;
+}
+
+.resume-item {
+  margin-bottom: var(--item-gap);
+  padding-bottom: var(--item-gap);
+  page-break-inside: avoid;
+  break-inside: avoid;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+.resume-item-header {
+  margin-bottom: 2px;
+}
+
+.resume-item:last-child {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+/* Section-level page break control */
+.resume-section {
+  page-break-inside: avoid;
+  break-inside: avoid;
+}
+
+.resume-section:not(:last-child) {
+  page-break-after: auto;
+  break-after: auto;
+}
+
+/* Prevent orphaned section titles */
+.resume-section-title {
+  page-break-after: avoid;
+  break-after: avoid;
+}
+
+/* Keep header with first section */
+.resume-header {
+  page-break-after: avoid;
+  break-after: avoid;
+}
+
+/* Two-column layout page break handling */
+.template-modern .resume-body,
+.template-sidebar .resume-body {
+  page-break-inside: auto;
+  break-inside: auto;
+}
+
+.template-modern .main-col,
+.template-modern .side-col,
+.template-sidebar .main-col,
+.template-sidebar .sidebar-col {
+  page-break-inside: auto;
+  break-inside: auto;
+}
+
+.resume-item-header {
+  display: flex;
+  justify-content: space-between;
+  font-weight: 600;
+  color: var(--text-dark);
+  margin-bottom: 2px;
+  font-size: 0.95em;
+}
+
+.template-modern .resume-item-header,
+.template-sidebar .resume-item-header {
+  font-weight: 700;
+}
+
+.resume-item-header > span:last-child {
+  font-weight: 400;
+  font-size: 11.5px;
+  color: var(--text-main);
+  letter-spacing: 0.2px;
+}
+
+.resume-item-sub {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.88em;
+  color: var(--accent);
+  margin-bottom: 6px;
+  font-weight: 500;
+}
+
+.resume-item-description {
+  color: var(--text-main);
+  white-space: pre-line;
+  font-size: 0.9em;
+  line-height: 1.45;
+  margin-top: 4px;
+  letter-spacing: 0.1px;
+}
+
+/* Skill Tags Styles */
+.resume-skills-grid {
+  display: flex;
+  flex-direction: column;
+  gap: var(--item-gap);
+}
+
+.resume-skill-cat {
+  margin-bottom: 4px;
+}
+
+.resume-skill-cat-name {
+  font-weight: 600;
+  color: var(--text-dark);
+  margin-bottom: 4px;
+}
+
+.resume-skill-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.resume-skill-tag {
+  background-color: var(--accent-light);
+  color: var(--accent);
+  padding: 1px 8px;
+  border-radius: 100px;
+  font-size: 0.8em;
+  font-weight: 500;
+    border: 1px solid var(--accent-border-light);
+  transition: transform 0.15s, box-shadow 0.15s;
+}

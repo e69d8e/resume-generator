@@ -5,7 +5,7 @@ import DynamicListForm from './DynamicListForm.jsx';
 
 export default function ContentTab() {
   return (
-    <div id="tab-content" className="tab-content active">
+    <div id="tab-content" className="tab-content active" role="tabpanel">
       <div className="forms-container">
         <PersonalForm />
         <SummaryForm />

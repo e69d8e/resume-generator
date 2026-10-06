@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { FileText, DownloadCloud, Minus, Plus, Maximize2, Loader } from 'lucide-react';
-import { useResume } from '../../context/ResumeContext.jsx';
-import { exportToPDF } from '../../utils/pdfExport.js';
+import { useResumeUI } from '../../context/ResumeContext.jsx';
+import { useExportPDF } from '../../hooks/useExportPDF.js';
+import { ZOOM_MIN, ZOOM_MAX, ZOOM_STEP } from '../../constants/defaultState.js';
 
 export default function PreviewToolbar({ pageCount = 1 }) {
-  const { isSyncing, zoom, setZoom, fitScreen, setFitScreen, state, showToast } = useResume();
-  const [isExporting, setIsExporting] = useState(false);
+  const { isSyncing, zoom, setZoom, fitScreen, setFitScreen } = useResumeUI();
+  const { isExporting, handleExportPDF } = useExportPDF();
   const [zoomInputValue, setZoomInputValue] = useState(`${Math.round(zoom * 100)}%`);
 
   useEffect(() => {
@@ -14,45 +15,36 @@ export default function PreviewToolbar({ pageCount = 1 }) {
 
   const handleZoomIn = () => {
     setFitScreen(false);
-    setZoom(prev => Math.min(1.5, Math.round((prev + 0.05) * 100) / 100));
+    setZoom(prev => Math.min(ZOOM_MAX, Math.round((prev + ZOOM_STEP) * 100) / 100));
   };
 
   const handleZoomOut = () => {
     setFitScreen(false);
-    setZoom(prev => Math.max(0.4, Math.round((prev - 0.05) * 100) / 100));
+    setZoom(prev => Math.max(ZOOM_MIN, Math.round((prev - ZOOM_STEP) * 100) / 100));
   };
 
   const handleFitScreen = () => {
     setFitScreen(prev => !prev);
   };
 
-  const handleZoomInputKeyDown = (e) => {
-    if (e.key === 'Enter') {
-      const raw = zoomInputValue.replace('%', '').trim();
-      const num = parseInt(raw, 10);
-      if (!isNaN(num) && num >= 40 && num <= 150) {
-        setFitScreen(false);
-        setZoom(num / 100);
-      } else {
-        setZoomInputValue(`${Math.round(zoom * 100)}%`);
-      }
-      e.target.blur();
+  // 解析"50%"或"50"形式的输入，非法值回退为当前缩放
+  const applyZoomInput = () => {
+    const raw = zoomInputValue.replace('%', '').trim();
+    const num = Number.parseInt(raw, 10);
+    const minPercent = Math.round(ZOOM_MIN * 100);
+    const maxPercent = Math.round(ZOOM_MAX * 100);
+    if (!Number.isNaN(num) && num >= minPercent && num <= maxPercent) {
+      setFitScreen(false);
+      setZoom(num / 100);
+    } else {
+      setZoomInputValue(`${Math.round(zoom * 100)}%`);
     }
   };
 
-  const handleExportPDF = async () => {
-    if (isExporting) return;
-    setIsExporting(true);
-    try {
-      const container = document.getElementById('resume-container');
-      if (!container) return;
-      await exportToPDF(container, state.personal.name);
-      showToast('PDF 导出成功！');
-    } catch (err) {
-      console.error('PDF export failed:', err);
-      showToast('PDF 导出失败，请重试！', 'error');
-    } finally {
-      setIsExporting(false);
+  const handleZoomInputKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      applyZoomInput();
+      e.target.blur();
     }
   };
 
@@ -109,6 +101,8 @@ export default function PreviewToolbar({ pageCount = 1 }) {
           value={zoomInputValue}
           onChange={(e) => setZoomInputValue(e.target.value)}
           onKeyDown={handleZoomInputKeyDown}
+          onBlur={applyZoomInput}
+          aria-label="缩放比例"
           title="输入缩放比例后回车确认"
         />
         <button

@@ -1,26 +1,27 @@
 import React, { useState } from 'react';
 import { Sliders, Layers, ChevronDown } from 'lucide-react';
-import { useResume } from '../../context/ResumeContext.jsx';
+import { useResumeData } from '../../context/ResumeContext.jsx';
 import { TEMPLATES, COLOR_PRESETS, FONTS, SPACINGS } from '../../constants/defaultState.js';
+import CollapseHeader from '../common/CollapseHeader.jsx';
 import SectionSorter from './SectionSorter.jsx';
 
 export default function LayoutTab() {
-  const { state, setTemplate, setTheme, setFont, setSpacing } = useResume();
+  const { state, setTemplate, setTheme, setFont, setSpacing } = useResumeData();
   const [customizerCollapsed, setCustomizerCollapsed] = useState(false);
   const [orderCollapsed, setOrderCollapsed] = useState(false);
 
   return (
-    <div id="tab-layout" className="tab-content active">
+    <div id="tab-layout" className="tab-content active" role="tabpanel">
       <div className="layout-container" style={{ padding: '16px 24px 40px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
         {/* Customization Panel */}
         <section className={`control-card customization-card ${customizerCollapsed ? 'collapsed' : ''}`}>
-          <div className="section-header" onClick={() => setCustomizerCollapsed(!customizerCollapsed)}>
+          <CollapseHeader collapsed={customizerCollapsed} onToggle={() => setCustomizerCollapsed(!customizerCollapsed)} label="展开或折叠排版与主题定制">
             <div className="header-title">
               <Sliders size={18} />
               <h2>排版与主题定制</h2>
             </div>
             <ChevronDown className="toggle-icon" size={18} />
-          </div>
+          </CollapseHeader>
 
           <div className="section-content">
             {/* Templates */}
@@ -91,13 +92,13 @@ export default function LayoutTab() {
 
         {/* Section Reordering Card */}
         <section className={`control-card sections-order-card ${orderCollapsed ? 'collapsed' : ''}`}>
-          <div className="section-header" onClick={() => setOrderCollapsed(!orderCollapsed)}>
+          <CollapseHeader collapsed={orderCollapsed} onToggle={() => setOrderCollapsed(!orderCollapsed)} label="展开或折叠模块顺序与显示">
             <div className="header-title">
               <Layers size={18} />
               <h2>模块顺序与显示</h2>
             </div>
             <ChevronDown className="toggle-icon" size={18} />
-          </div>
+          </CollapseHeader>
 
           <div className="section-content">
             <SectionSorter />

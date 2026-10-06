@@ -1,6 +1,7 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState } from 'react';
 import { ChevronUp, ChevronDown, Trash2 } from 'lucide-react';
 import { CARD_TITLE_CONFIG } from '../../constants/defaultState.js';
+import CollapseHeader from '../common/CollapseHeader.jsx';
 
 function getCardTitle(sectionType, item) {
   const cfg = CARD_TITLE_CONFIG[sectionType];
@@ -25,7 +26,7 @@ export default function FormCard({
 
   return (
     <div className={`item-card ${collapsed ? 'collapsed' : ''}`} data-id={item.id}>
-      <div className="item-card-header" onClick={() => setCollapsed(!collapsed)}>
+      <CollapseHeader collapsed={collapsed} onToggle={() => setCollapsed(!collapsed)} className="item-card-header" label={`展开或折叠条目：${title}`}>
         <span className="item-card-title">{title}</span>
         <div className="item-card-actions" onClick={(e) => e.stopPropagation()}>
           <button
@@ -55,12 +56,12 @@ export default function FormCard({
           </button>
           <ChevronDown className="chevron-toggle" size={16} />
         </div>
-      </div>
+      </CollapseHeader>
 
       <div className="item-card-content">
         <div className="form-grid">
           {fields.map(f => {
-            const val = item[f.name] || '';
+            const val = item[f.name] ?? '';
             const isFullWidth = f.fullWidth ? ' full-width' : '';
 
             if (f.type === 'textarea') {

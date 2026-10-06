@@ -48,7 +48,7 @@ graph TD
 | **多媒体与导出** | html2canvas + jsPDF | 客户端多页矢量拼接、中文无乱码排版与高清打印适配 |
 | **设计系统** | Warm-Canvas CSS Tokens | 包含 10 种配色、3 种字体层级、3 种间距系统与响应式断点 |
 | **测试框架** | Vitest + Testing Library | 极速组件测试与状态数据模型校验 |
-| **CI/CD & 托管** | Netlify + GitHub Actions | 自动化提交构建、全球边缘 CDN 分发与 SPA 路由保护 |
+| **CI/CD & 托管** | Netlify | Git 推送自动触发构建，全球边缘 CDN 分发与 SPA 路由保护 |
 
 ---
 
@@ -121,28 +121,35 @@ interface ResumeState {
 resume-generator/
 ├── index.html                    # Vite HTML 挂载模版
 ├── vite.config.js                # Vite 构建、分包策略与 Vitest 配置
-├── netlify.toml                  # Netlify CI/CD 自动化构建与重定向规则
+├── netlify.toml                  # Netlify 构建配置、安全响应头与重定向规则
 ├── package.json                  # 项目依赖与 Scripts
-├── styles.css                    # Warm-canvas 设计系统 Tokens 与排版样式
 ├── src/
 │   ├── main.jsx                  # React 应用挂载入口
 │   ├── App.jsx                   # 左右分栏响应式工作台
+│   ├── styles/                   # 设计系统样式分区（index.css 按级联顺序聚合）
 │   ├── constants/
 │   │   └── defaultState.js       # 预设数据、表单字段元数据与模版枚举
 │   ├── context/
-│   │   └── ResumeContext.jsx     # 全局状态管理、防抖本地持久化与提示系统
+│   │   └── ResumeContext.jsx     # 全局状态（数据/UI 双 Context）、防抖持久化与提示系统
+│   ├── hooks/
+│   │   └── useExportPDF.js       # 导出 PDF 共享逻辑（loading/互斥/错误提示）
 │   ├── components/
-│   │   ├── common/               # 通用组件 (Toast、头像裁切模态框)
+│   │   ├── common/               # 通用组件 (Toast、头像裁切模态框、折叠头)
 │   │   ├── editor/               # 左侧编辑面板与表单集合
-│   │   └── preview/              # 右侧实时 A4 预览与 7 大模版
+│   │   └── preview/              # 右侧实时 A4 预览（HTML 渲染 + 分页引擎）
 │   └── utils/
-│       ├── pagination.js         # A4 页面高度算法与缓存管理
+│       ├── pagination.js         # A4 页面高度算法、测量沙盒与缓存管理
 │       ├── pdfExport.js          # 高保真多页 PDF 导出引擎
-│       └── storage.js            # LocalStorage 存取与防污染合并
+│       ├── storage.js            # LocalStorage 版本化存取、导入消毒与防污染合并
+│       ├── skills.js             # 技能标签字符串回写纯函数
+│       └── id.js                 # 防碰撞 id 生成
 └── tests/                        # 单元测试与端到端交互测试套件
-    ├── state.test.js
-    ├── pagination.test.js
-    └── components.test.jsx
+    ├── state.test.js             # 数据模型与导入合并
+    ├── sanitize.test.js          # XSS 转义与导入消毒回归
+    ├── storage.test.js           # 持久化往返/版本化/配额失败
+    ├── pagination.test.js        # 分页引擎与边界用例
+    ├── skills.test.js            # 技能标签与 id 生成
+    └── components.test.jsx       # 应用级交互冒烟
 ```
 
 ---
@@ -232,9 +239,3 @@ sequenceDiagram
 | Chrome | Edge | Firefox | Safari |
 |---|---|---|---|
 | >= 90 | >= 90 | >= 88 | >= 14 |
-
----
-
-## 许可证
-
-本项目遵循 [MIT License](LICENSE)。

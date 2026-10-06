@@ -1,0 +1,196 @@
+/* ==========================================
+   TEMPLATE 1: MODERN (DEFAULT)
+   Two-column asymmetrical layout
+   ========================================== */
+.template-modern .resume-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  border-bottom: 1px solid var(--accent-light);
+  padding-bottom: 14px;
+  margin-bottom: 16px;
+  position: relative;
+}
+
+.template-modern .resume-header::after {
+  content: "";
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  width: 60px;
+  height: 2px;
+  background: linear-gradient(90deg, var(--accent) 0%, transparent 100%);
+}
+
+.template-modern .header-info-main {
+  flex: 1;
+}
+
+.template-modern .resume-name {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--primary);
+  letter-spacing: -0.3px;
+  margin-bottom: 3px;
+  font-family: 'Outfit', sans-serif;
+}
+
+.template-modern .resume-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+}
+
+.template-modern .header-contacts {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+  font-size: 10.5px;
+  color: var(--text-main);
+  text-align: left;
+  margin-top: 8px;
+}
+
+.template-modern .contact-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.template-modern .contact-item svg,
+.template-modern .contact-item i[data-lucide] {
+  width: 10px;
+  height: 10px;
+  color: var(--accent);
+  background: var(--accent-light);
+  border: 1px solid var(--accent-border-light);
+  border-radius: 3px;
+  padding: 3px;
+  box-sizing: content-box;
+}
+
+.template-modern .avatar-container {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 2px solid var(--accent);
+  padding: 2px;
+  background: #fff;
+  margin-left: 18px;
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.08);
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.template-modern .avatar-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.template-modern .resume-body {
+  display: grid;
+  grid-template-columns: 2.4fr 1fr;
+  gap: 22px;
+}
+
+.template-modern .main-col {
+  display: flex;
+  flex-direction: column;
+}
+
+.template-modern .side-col {
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(180deg, var(--sidebar-bg-start) 0%, var(--sidebar-bg-end) 100%);
+  border: 1px solid var(--accent-border-light);
+  border-left: 2px solid var(--accent-border-strong);
+  padding: 12px 10px 12px 14px;
+  border-radius: 6px;
+  box-shadow: inset -1px 0 3px rgba(0,0,0,0.01), 0 1px 3px rgba(0,0,0,0.02);
+}
+
+.template-modern .resume-summary {
+  color: var(--text-main);
+  line-height: 1.55;
+  font-size: 0.95em;
+  margin-bottom: var(--sec-gap);
+}
+
+.template-modern .resume-section-title {
+  border-bottom: none;
+  border-left: 3px solid var(--accent);
+  padding-left: 10px;
+  padding-bottom: 0;
+  margin-bottom: 10px;
+  position: relative;
+  width: 100%;
+}
+
+.template-modern .resume-section-title::after {
+  content: "";
+  flex-grow: 1;
+  height: 1px;
+  background: linear-gradient(90deg, var(--accent-border-strong) 0%, rgba(255,255,255,0) 100%);
+  margin-left: 12px;
+}
+
+.template-modern .side-col .resume-section-title {
+  border-left-color: var(--primary);
+  font-size: 13px;
+}
+
+.template-modern .side-col .resume-section-title::after {
+  margin-left: 10px;
+}
+
+.template-modern .main-col .resume-items-list {
+  position: relative;
+  border-left: 1px solid var(--accent-border-strong);
+  margin-left: 5px;
+  padding-left: 16px;
+}
+
+.template-modern .main-col .resume-item {
+  position: relative;
+  border-bottom: none;
+  margin-bottom: var(--item-gap);
+  padding-bottom: 4px;
+}
+
+.template-modern .main-col .resume-item:last-child {
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.template-modern .main-col .resume-item::before {
+  content: "";
+  position: absolute;
+  left: -22px;
+  top: 6px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #fff;
+  border: 2px solid var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-light);
+  z-index: 2;
+}
+
+.template-modern .resume-skill-tag {
+  background: linear-gradient(135deg, var(--accent-light) 0%, rgba(255,255,255,0.4) 100%);
+  color: var(--accent);
+  border-color: var(--accent-border);
+  padding: 2px 10px;
+  font-size: 0.78em;
+  letter-spacing: 0.2px;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+}

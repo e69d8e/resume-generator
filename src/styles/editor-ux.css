@@ -1,0 +1,211 @@
+/* ==========================================
+   TAB NAVIGATION SYSTEM & UX TWEAKS
+   ========================================== */
+.editor-tabs {
+  display: flex;
+  background-color: var(--ui-card-bg);
+  border-bottom: 1px solid var(--ui-border);
+  padding: 6px 16px;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.tab-btn {
+  background: none;
+  border: none;
+  color: var(--ui-text-muted);
+  /* DESIGN.md nav-link / category-tab：14px / 500、内边距 8px × 14px */
+  padding: 8px 14px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: var(--ui-radius-md);
+  transition: var(--transition);
+  flex: 1;
+}
+
+.tab-btn:hover {
+  color: var(--ui-text);
+  background-color: var(--ui-bg);
+}
+
+.tab-btn.active {
+  /* DESIGN.md category-tab-active：surface-card 底 + 墨色文字 */
+  color: var(--ui-text);
+  background-color: var(--ui-card-bg);
+}
+
+.tab-btn svg {
+  width: 15px;
+  height: 15px;
+}
+
+.tab-content {
+  display: none;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.tab-content.active {
+  display: flex;
+  flex-direction: column;
+}
+
+.layout-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Visibility button inside sortable list */
+.visibility-btn {
+  background: none;
+  border: none;
+  color: var(--ui-text-muted);
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  border-radius: 4px;
+  transition: var(--transition);
+}
+
+.visibility-btn:hover {
+  color: var(--ui-text);
+  background-color: var(--ui-card-bg);
+}
+
+.visibility-btn.visible {
+  color: var(--ui-primary);
+}
+
+.visibility-btn.hidden {
+  color: var(--ui-text-muted);
+  opacity: 0.4;
+}
+
+/* Section sorter move buttons (touch fallback for HTML5 drag) */
+.move-btn-group {
+  display: flex;
+  align-items: center;
+  border: 1px solid var(--ui-border);
+  border-radius: var(--ui-radius-sm);
+  overflow: hidden;
+}
+
+.move-btn {
+  background: none;
+  border: none;
+  color: var(--ui-text-muted);
+  cursor: pointer;
+  padding: 3px 4px;
+  display: flex;
+  align-items: center;
+  transition: var(--transition);
+}
+
+.move-btn:hover:not(:disabled) {
+  color: var(--ui-text);
+  background-color: var(--ui-card-bg);
+}
+
+.move-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+/* Toast manual close button */
+.toast-close-btn {
+  background: none;
+  border: none;
+  color: inherit;
+  opacity: 0.6;
+  cursor: pointer;
+  padding: 2px;
+  display: flex;
+  align-items: center;
+  flex: none;
+}
+
+.toast-close-btn:hover {
+  opacity: 1;
+}
+
+.section-name-text {
+  transition: var(--transition);
+  font-weight: 500;
+}
+
+.section-name-text.text-muted {
+  color: var(--ui-text-muted);
+  opacity: 0.5;
+  text-decoration: line-through;
+}
+
+/* Drag and Drop Feedbacks */
+.sortable-item {
+  cursor: grab;
+  transition: transform 0.15s cubic-bezier(0.2, 0, 0, 1), background-color 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+  will-change: transform, box-shadow;
+}
+
+.sortable-item:active {
+  cursor: grabbing;
+}
+
+.sortable-item.dragging {
+  opacity: 0.45;
+  transform: scale(0.98);
+  border: 1px dashed var(--ui-primary) !important;
+  background-color: rgba(204, 120, 92, 0.08) !important;
+}
+
+.sortable-item.drag-over {
+  border-color: var(--ui-primary) !important;
+  box-shadow: 0 -2px 0 0 var(--ui-primary), 0 4px 12px rgba(204, 120, 92, 0.12) !important;
+  transform: translateY(-2px);
+}
+
+/* ==========================================
+   TEXT EDITING UX IMPROVEMENTS
+   ========================================== */
+textarea {
+  resize: none;
+  overflow-y: hidden;
+  min-height: 80px;
+  line-height: 1.5;
+}
+
+/* Editable text elements in preview */
+[contenteditable="true"] {
+  outline: none;
+  border: 1px dashed transparent;
+  border-radius: 4px;
+  transition: background-color 0.2s, border-color 0.2s, box-shadow 0.2s;
+  cursor: text;
+  display: inline-block;
+  min-width: 20px;
+}
+
+[contenteditable="true"]:hover {
+  background-color: var(--accent-light);
+  border-color: var(--accent);
+}
+
+[contenteditable="true"]:focus {
+  background-color: var(--accent-light);
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 3px var(--accent-border) !important;
+}
+
+/* Make sure empty contenteditable elements remain visible and clickable */
+[contenteditable="true"]:empty::before {
+  content: "点击编辑...";
+  color: var(--text-main);
+  opacity: 0.5;
+  font-style: italic;
+}

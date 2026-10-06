@@ -1,8 +1,14 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { DEFAULT_STATE, FORM_CONFIGS, DEFAULT_SECTION_COLUMNS } from '../constants/defaultState.js';
 import { loadStateFromLocalStorage, saveStateToLocalStorage } from '../utils/storage.js';
+import { updateTagInTagsString } from '../utils/skills.js';
+import { generateId } from '../utils/id.js';
 
-const ResumeContext = createContext(null);
+// 数据与 UI 状态拆成两个 Context：简历数据（state 及其操作）变化频率高，
+// UI 状态（缩放/tab/toast 等）变化频率低。拆分后编辑文本不会让只关心
+// UI 的组件跟着重渲染，反之亦然。所有 action 均为稳定引用。
+const DataContext = createContext(null);
+const UIContext = createContext(null);
 
 export function ResumeProvider({ children }) {
   const [state, setState] = useState(() => loadStateFromLocalStorage());
@@ -14,20 +20,9 @@ export function ResumeProvider({ children }) {
   const [cropModal, setCropModal] = useState({ isOpen: false, imageUrl: '' });
 
   const saveTimerRef = useRef(null);
-
-  // Debounced auto-save to localStorage
-  useEffect(() => {
-    setIsSyncing(true);
-    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
-    saveTimerRef.current = setTimeout(() => {
-      saveStateToLocalStorage(state);
-      setIsSyncing(false);
-    }, 300);
-
-    return () => {
-      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
-    };
-  }, [state]);
+  const stateRef = useRef(state);
+  stateRef.current = state;
+  const storageWarnedRef = useRef(false);
 
   const showToast = useCallback((message, type = 'success') => {
     const id = Date.now() + Math.random();
@@ -35,6 +30,50 @@ export function ResumeProvider({ children }) {
     setTimeout(() => {
       setToasts(prev => prev.filter(t => t.id !== id));
     }, 3200);
+  }, []);
+
+  const dismissToast = useCallback((id) => {
+    setToasts(prev => prev.filter(t => t.id !== id));
+  }, []);
+
+  // Debounced auto-save to localStorage
+  useEffect(() => {
+    setIsSyncing(true);
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(() => {
+      saveTimerRef.current = null;
+      const saved = saveStateToLocalStorage(stateRef.current);
+      setIsSyncing(false);
+      if (!saved) {
+        if (!storageWarnedRef.current) {
+          storageWarnedRef.current = true;
+          showToast('存储空间不足，最新更改未能保存！请尝试更换更小的头像', 'error');
+        }
+      } else {
+        storageWarnedRef.current = false;
+      }
+    }, 300);
+
+    return () => {
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    };
+  }, [state, showToast]);
+
+  // 关闭/刷新页面时立即落盘，消除防抖窗口内的更改丢失
+  useEffect(() => {
+    const flushPendingSave = () => {
+      if (saveTimerRef.current) {
+        clearTimeout(saveTimerRef.current);
+        saveTimerRef.current = null;
+        saveStateToLocalStorage(stateRef.current);
+      }
+    };
+    window.addEventListener('beforeunload', flushPendingSave);
+    window.addEventListener('pagehide', flushPendingSave);
+    return () => {
+      window.removeEventListener('beforeunload', flushPendingSave);
+      window.removeEventListener('pagehide', flushPendingSave);
+    };
   }, []);
 
   const openCropModal = useCallback((imageUrl) => {
@@ -70,7 +109,7 @@ export function ResumeProvider({ children }) {
     const config = FORM_CONFIGS[sectionType];
     if (!config) return;
     const newItem = {
-      id: `${config.idPrefix}-${Date.now()}`,
+      id: generateId(config.idPrefix),
       ...config.newItem
     };
     setState(prev => ({
@@ -84,6 +123,17 @@ export function ResumeProvider({ children }) {
       ...prev,
       [sectionType]: prev[sectionType].map(item =>
         item.id === id ? { ...item, [field]: value } : item
+      )
+    }));
+  }, []);
+
+  const updateSkillTag = useCallback((skillId, tagIndex, value) => {
+    setState(prev => ({
+      ...prev,
+      skills: prev.skills.map(item =>
+        item.id === skillId
+          ? { ...item, tags: updateTagInTagsString(item.tags, tagIndex, value) }
+          : item
       )
     }));
   }, []);
@@ -153,7 +203,7 @@ export function ResumeProvider({ children }) {
     setState(prev => ({ ...prev, template }));
   }, []);
 
-  const value = {
+  const dataValue = useMemo(() => ({
     state,
     setState,
     resetState,
@@ -161,6 +211,7 @@ export function ResumeProvider({ children }) {
     updateSummary,
     addSubitem,
     updateSubitem,
+    updateSkillTag,
     deleteSubitem,
     moveSubitem,
     toggleSectionColumn,
@@ -169,7 +220,27 @@ export function ResumeProvider({ children }) {
     setTheme,
     setFont,
     setSpacing,
-    setTemplate,
+    setTemplate
+  }), [
+    state,
+    resetState,
+    updatePersonal,
+    updateSummary,
+    addSubitem,
+    updateSubitem,
+    updateSkillTag,
+    deleteSubitem,
+    moveSubitem,
+    toggleSectionColumn,
+    toggleSectionVisibility,
+    reorderSections,
+    setTheme,
+    setFont,
+    setSpacing,
+    setTemplate
+  ]);
+
+  const uiValue = useMemo(() => ({
     zoom,
     setZoom,
     fitScreen,
@@ -179,22 +250,33 @@ export function ResumeProvider({ children }) {
     isSyncing,
     toasts,
     showToast,
+    dismissToast,
     cropModal,
     openCropModal,
     closeCropModal
-  };
+  }), [zoom, fitScreen, activeTab, isSyncing, toasts, showToast, dismissToast, cropModal, openCropModal, closeCropModal]);
 
   return (
-    <ResumeContext.Provider value={value}>
-      {children}
-    </ResumeContext.Provider>
+    <DataContext.Provider value={dataValue}>
+      <UIContext.Provider value={uiValue}>
+        {children}
+      </UIContext.Provider>
+    </DataContext.Provider>
   );
 }
 
-export function useResume() {
-  const context = useContext(ResumeContext);
+export function useResumeData() {
+  const context = useContext(DataContext);
   if (!context) {
-    throw new Error('useResume must be used within a ResumeProvider');
+    throw new Error('useResumeData must be used within a ResumeProvider');
+  }
+  return context;
+}
+
+export function useResumeUI() {
+  const context = useContext(UIContext);
+  if (!context) {
+    throw new Error('useResumeUI must be used within a ResumeProvider');
   }
   return context;
 }

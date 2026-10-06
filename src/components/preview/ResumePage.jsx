@@ -1,8 +1,8 @@
 import React from 'react';
-import { useResume } from '../../context/ResumeContext.jsx';
+import { useResumeData } from '../../context/ResumeContext.jsx';
 
 export default function ResumePage({ pageNumber = 1, children }) {
-  const { state } = useResume();
+  const { state } = useResumeData();
   const templateClasses = `${state.theme} ${state.font} ${state.spacing} template-${state.template}`;
 
   return (

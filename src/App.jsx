@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { Edit3, Eye } from 'lucide-react';
-import { useResume } from './context/ResumeContext.jsx';
+import { useResumeUI } from './context/ResumeContext.jsx';
 import EditorHeader from './components/editor/EditorHeader.jsx';
 import EditorTabs from './components/editor/EditorTabs.jsx';
 import ContentTab from './components/editor/ContentTab.jsx';
@@ -11,14 +11,19 @@ import ToastContainer from './components/common/Toast.jsx';
 import AvatarCropModal from './components/common/AvatarCropModal.jsx';
 
 export default function App() {
-  const { activeTab, setFitScreen } = useResume();
+  const { activeTab, fitScreen, setFitScreen } = useResumeUI();
   const [pageCount, setPageCount] = useState(1);
   const [mobileView, setMobileView] = useState('edit'); // 'edit' | 'preview'
+  const editViewFitRef = useRef(false);
 
   const handleMobileSwitch = (view) => {
     setMobileView(view);
     if (view === 'preview') {
+      // 进入预览强制"适应屏幕"，切回编辑时还原用户原先的缩放模式
+      editViewFitRef.current = fitScreen;
       setFitScreen(true);
+    } else {
+      setFitScreen(editViewFitRef.current);
     }
   };
 
