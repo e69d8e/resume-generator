@@ -117,7 +117,16 @@ body {
 
 .header-actions {
   display: flex;
-  gap: 8px;
+  gap: 6px;
+  /* 文案放不下时整颗按钮折到下一行，而不是把按钮内文字拆成两行 */
+  flex-wrap: wrap;
+}
+
+/* 按钮宽度随文案自适应（而非 flex:1 等分挤压），保证 4 颗按钮同排时文字不断行 */
+.header-actions .btn {
+  flex: 1 1 auto;
+  padding-left: 14px;
+  padding-right: 14px;
 }
 
 .btn {
@@ -136,6 +145,7 @@ body {
   flex: 1;
   text-decoration: none;
   height: 40px;
+  white-space: nowrap;
 }
 
 .btn-primary {
