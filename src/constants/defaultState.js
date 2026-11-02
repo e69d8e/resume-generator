@@ -51,7 +51,7 @@ export const FORM_CONFIGS = {
     title: '教育背景',
     icon: 'GraduationCap',
     idPrefix: 'edu',
-    newItem: { institution: '', degree: '', major: '', startDate: '', endDate: '', description: '' },
+    newItem: { institution: '', degree: '', major: '', startDate: '', description: '' },
     fields: [
       { name: 'institution', label: '学校 / 机构名称', updateTitle: true },
       { name: 'degree', label: '学位 / 证书', placeholder: '例如：学士 / 硕士', updateTitle: true },
@@ -169,8 +169,7 @@ export const DEFAULT_STATE = {
       institution: '华中科技大学',
       degree: '硕士',
       major: '工商管理 (MBA)',
-      startDate: '2018-09',
-      endDate: '2021-06',
+      startDate: '2018-09 - 2021-06',
       description: '专注于企业战略管理与组织行为学研究。荣获校级优秀研究生、一等学业奖学金，担任 MBA 学生会副主席。'
     },
     {
@@ -178,8 +177,7 @@ export const DEFAULT_STATE = {
       institution: '武汉大学',
       degree: '学士',
       major: '行政管理',
-      startDate: '2014-09',
-      endDate: '2018-06',
+      startDate: '2014-09 - 2018-06',
       description: '连续三年获得校级优秀学生奖学金，全国大学生英语竞赛一等奖，担任院学生会主席。'
     }
   ],

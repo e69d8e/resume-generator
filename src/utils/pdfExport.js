@@ -5,9 +5,18 @@ import { jsPDF } from 'jspdf';
 // transform/contenteditable 导致对方截图被污染
 let isExporting = false;
 
-export async function exportToPDF(resumeContainerEl, resumeName = 'resume') {
+// 文件名优先从预览 DOM 取，避免为了拿姓名而订阅整个简历数据 Context
+function resolveResumeName(resumeContainerEl, fallback) {
+  const el = resumeContainerEl?.querySelector('.resume-name, .continuation-name');
+  const text = (el?.textContent || '').trim();
+  return text || fallback || 'resume';
+}
+
+export async function exportToPDF(resumeContainerEl, resumeName = '') {
   if (!resumeContainerEl || isExporting) return false;
   isExporting = true;
+
+  const fileName = resolveResumeName(resumeContainerEl, resumeName);
 
   const originalTransform = resumeContainerEl.style.transform;
   resumeContainerEl.style.transform = 'none';
@@ -40,7 +49,7 @@ export async function exportToPDF(resumeContainerEl, resumeName = 'resume') {
 
     const now = new Date();
     const dateStr = `${String(now.getFullYear()).slice(-2)}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`;
-    const safeName = (resumeName || 'resume').replace(/[\\/:*?"<>|]/g, '_').trim() || 'resume';
+    const safeName = (fileName || 'resume').replace(/[\\/:*?"<>|]/g, '_').trim() || 'resume';
     pdf.save(`${safeName}_${dateStr}.pdf`);
     return true;
   } catch (err) {

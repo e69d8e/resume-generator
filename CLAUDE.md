@@ -40,7 +40,8 @@ src/
 └── utils/
     ├── pagination.js            # 分页引擎（核心，见下）
     ├── pdfExport.js             # html2canvas 逐页截图 + jsPDF 拼接，模块级导出互斥
-    ├── storage.js               # 版本化 localStorage 存取 + mergeState 导入消毒
+    ├── storage.js               # 版本化 localStorage 存取 + mergeState 消毒 + parseImportedState 导入校验
+    ├── domText.js               # contenteditable → 纯文本（保留 <br>/块级换行）
     ├── skills.js / id.js        # 技能标签回写纯函数 / 防碰撞 id 生成
 ```
 
@@ -55,18 +56,27 @@ src/
 预览不是 React 组件树，而是 **HTML 字符串 → `dangerouslySetInnerHTML`**：
 
 1. `renderFullResumeHTML(state)` 按 template/sectionOrder/sectionColumns 拼接 headerHTML + bodyHTML；
-2. `paginateContent` 用**测量沙盒**（`.resume-measure-sandbox`，固定 210mm 宽）反复挂载/卸载 DOM 量取高度，超过 `getPageContentHeight`（A4 1123px - 上下 padding）即分页；modern/sidebar 双栏模板按列独立分页（`paginateComplexLayout`）；
+2. `paginateContent` 用**测量沙盒**反复挂载/卸载 DOM 量取高度，超过 `getPageContentHeight`（A4 1123px - 上下 padding）即分页；modern/sidebar 双栏模板按列独立分页（`paginateComplexLayout`），列内静态内容（侧栏头像/联系方式、名片姓名）固定留在第 1 页；
 3. `ResumeContainer` 用 `useDeferredValue(state)` 低优先级重分页，分页结果（JSON 比较）未变化时跳过 setState。
 
-**测量沙盒约定**：测单列高度时沙盒必须保留双列结构（被测列 + 空占位列），让模板 CSS 的列宽自然生效；禁止用内联 `width:auto` 覆盖列宽，否则行宽被撑到整页宽、高度系统性低估、内容被 `overflow:hidden` 静默裁切。
+**测量沙盒约定（改这里之前先读）**：
+- 沙盒 class 必须同时带 `resume-page` 与 `resume-measure-sandbox`：主题/间距变量（`--accent`、`--sec-gap`、`--item-gap`…）都声明在 `.resume-paper.theme-x` / `.resume-page.spacing-x` 上，缺了 `resume-page` 时所有 `var()` 失效（border 变 0、间距变 0），量到的高度会系统性偏小。
+- 沙盒 DOM 必须与真实页面同构：`.resume-page > .resume-page-inner > (页头 + 列结构)`；测单列时保留双列结构（被测列 + 空占位列），禁止用内联 `width:auto` 覆盖列宽。
+- 分页判定按**整页候选标记**测量（页头 + 本页全部 section 的真实 HTML），不要退回到"各段高度相加"——段间的 `--sec-gap` 等间距会被漏算，误差随段数累积并被 `overflow:hidden` 静默裁切。
+- 长文本按页切分：无 `.resume-item` 的长段（自我评价）与单条就超过整页的经历描述，都由 `paginateSectionsIntoPages` 按文本二分切分，逐页重复小节标题/条目头。
+- 该函数签名是 `(sectionEls, options)`：`pagePrefixHTML`（页头）、`continuationPrefixHTML`（续页小标题）、`firstPageContentPrefixHTML`（列内静态内容）、`pageContentHeight`、`columnClass`、`cachedMeasure(html, columnClass, leadingHTML)`。
 
 ### ⚠️ 安全约定（必须遵守）
 
 预览走 `dangerouslySetInnerHTML`，**任何用户数据（personal 字段、条目字段、summary、id、avatar URL）拼进 HTML 模板字符串前必须经过 `pagination.js` 导出的 `escapeHTML()`**。新增模板分支或插值点时逐点检查。数据入库侧的防线在 `storage.js` 的 `mergeState`（字段白名单、类型强转、id 补齐、枚举校验），两道防线都要维持。
 
+### 导入约定
+
+`storage.js` 的 `parseImportedState(parsed)` 是唯一导入入口：解包 `{version, data}`、校验是否像简历数据（至少命中两个已知字段）、再走 `mergeState` 消毒；无法识别时返回 `null`，由 `EditorHeader` 提示错误并**保留**用户现有数据（早期版本会把任意 JSON 静默合并成默认示例数据，等于丢稿）。
+
 ### 存储格式
 
-localStorage key `resumify_state`，格式 `{ version: 1, data: <state> }`；读取兼容无 version 的旧裸对象。导入 JSON 一律经 `mergeState(DEFAULT_STATE, parsed)` 消毒。
+localStorage key `resumify_state`，格式 `{ version: 1, data: <state> }`；读取兼容无 version 的旧裸对象。导入 JSON 一律经 `parseImportedState` → `mergeState(DEFAULT_STATE, parsed)` 消毒。
 
 ### PDF 导出
 
@@ -74,12 +84,13 @@ localStorage key `resumify_state`，格式 `{ version: 1, data: <state> }`；读
 
 ## 测试
 
-vitest + @testing-library/react + happy-dom（`vite.config.js` 内联配置）。6 个测试文件：
+vitest + @testing-library/react + happy-dom（`vite.config.js` 内联配置）。7 个测试文件：
 
 - `state.test.js` — 数据模型默认值、mergeState 合并、原型污染防护
 - `sanitize.test.js` — XSS 转义（含整条渲染链）与导入消毒回归
-- `storage.test.js` — 版本化往返、旧格式兼容、配额失败返回 false、损坏 JSON 兜底
-- `pagination.test.js` — 测量缓存、分页拆分、超长 section、技能标签 data-path
+- `storage.test.js` — 版本化往返、旧格式兼容、配额失败返回 false、损坏 JSON 兜底、`parseImportedState` 导入校验
+- `pagination.test.js` — 测量缓存、整页候选测量、条目拆分、长文本切分、双栏静态内容保留、技能标签 data-path
+- `domText.test.js` — 预览内联编辑的换行还原（`<br>` / 块级元素 / nbsp）
 - `skills.test.js` — 标签字符串回写纯函数、id 生成防碰撞
 - `components.test.jsx` — 应用级冒烟（渲染/Tab/表单联动/模板切换/预览编辑技能标签/重置入口）
 

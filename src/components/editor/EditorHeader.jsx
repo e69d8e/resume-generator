@@ -1,9 +1,8 @@
 import React, { useRef } from 'react';
 import { Upload, Download, DownloadCloud, Loader, RotateCcw } from 'lucide-react';
 import { useResumeData, useResumeUI } from '../../context/ResumeContext.jsx';
-import { exportStateAsJSON, mergeState } from '../../utils/storage.js';
+import { exportStateAsJSON, parseImportedState } from '../../utils/storage.js';
 import { useExportPDF } from '../../hooks/useExportPDF.js';
-import { DEFAULT_STATE } from '../../constants/defaultState.js';
 import SpikeMark from '../common/SpikeMark.jsx';
 
 export default function EditorHeader() {
@@ -25,15 +24,23 @@ export default function EditorHeader() {
 
     const reader = new FileReader();
     reader.onload = (event) => {
+      let merged = null;
       try {
-        const parsed = JSON.parse(event.target.result);
-        const merged = mergeState(DEFAULT_STATE, parsed);
-        setState(merged);
-        showToast('数据导入成功！');
+        merged = parseImportedState(JSON.parse(event.target.result));
       } catch (err) {
         console.error('Import failed:', err);
-        showToast('JSON 文件解析失败，请检查格式！', 'error');
       }
+      if (!merged) {
+        // 旧行为：任何 JSON 都能"导入成功"并静默换成默认示例数据，等于丢稿
+        showToast('无法识别的简历数据文件，请使用本工具“保存数据”导出的 JSON', 'error');
+        return;
+      }
+      if (!window.confirm('导入会覆盖当前简历内容，建议先“保存数据”备份。确定继续吗？')) return;
+      setState(merged);
+      showToast('数据导入成功！');
+    };
+    reader.onerror = () => {
+      showToast('文件读取失败，请重试', 'error');
     };
     reader.readAsText(file);
   };

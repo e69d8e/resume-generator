@@ -1,6 +1,6 @@
 # Resumify — 高质感简历生成器
 
-Resumify 是一款基于 **React 19 + Vite** 构建的现代化高质感简历生成器。采用左右双栏响应式设计，左侧提供模块化表单与样式排版控制，右侧提供高保真实时 A4 预览与自动跨页排版。原生支持客户端矢量化 PDF 导出与 JSON 数据全量备份，深度集成 Netlify 持续集成 (CI/CD) 自动化构建与全球 CDN 部署。
+Resumify 是一款基于 **React 19 + Vite** 构建的现代化高质感简历生成器。采用左右双栏响应式设计，左侧提供模块化表单与样式排版控制，右侧提供高保真实时 A4 预览与自动跨页排版。原生支持客户端高清 PDF 导出（逐页 2x 光栅渲染，中文不乱码、版式与预览一致）与 JSON 数据全量备份，深度集成 Netlify 持续集成 (CI/CD) 自动化构建与全球 CDN 部署。
 
 **🔗 在线体验：[https://resumify-li.netlify.app/](https://resumify-li.netlify.app/)**
 
@@ -31,7 +31,7 @@ graph TD
 
     subgraph ExportSystem [导出与交付流水线]
         C --> J[html2canvas + jsPDF]
-        J --> K[高清 A4 多页无损 PDF]
+        J --> K[高清 A4 多页 PDF（图片式，版式与预览一致）]
     end
 ```
 
@@ -45,7 +45,7 @@ graph TD
 | **构建工具** | Vite 6 | 秒级冷启动、极致 HMR 热更新与分包 Tree-shaking |
 | **状态流转** | React Context + Custom Hooks | 集中式单向数据流、细粒度原子 Action 更新 |
 | **图标体系** | Lucide React | 原生 SVG 组件按需加载，零 DOM 运行时扫描开销 |
-| **多媒体与导出** | html2canvas + jsPDF | 客户端多页矢量拼接、中文无乱码排版与高清打印适配 |
+| **多媒体与导出** | html2canvas + jsPDF | 客户端逐页 2x 光栅截图拼装（文本不可选，换取中文零乱码与 100% 版式还原）；浏览器打印走 `print.css` |
 | **设计系统** | Warm-Canvas CSS Tokens | 包含 10 种配色、3 种字体层级、3 种间距系统与响应式断点 |
 | **测试框架** | Vitest + Testing Library | 极速组件测试与状态数据模型校验 |
 | **CI/CD & 托管** | Netlify | Git 推送自动触发构建，全球边缘 CDN 分发与 SPA 路由保护 |

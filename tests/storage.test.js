@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { DEFAULT_STATE } from '../src/constants/defaultState.js';
 import {
   mergeState,
+  parseImportedState,
   loadStateFromLocalStorage,
   saveStateToLocalStorage
 } from '../src/utils/storage.js';
@@ -75,5 +76,47 @@ describe('localStorage persistence', () => {
     // 名称被保留，但渲染层会转义；此处验证 merge 层不丢字段
     expect(loaded.personal.name).toBe('<img src=x onerror="alert(1)">');
     expect(loaded.personal.title).toBe(DEFAULT_STATE.personal.title);
+  });
+});
+
+describe('parseImportedState', () => {
+  it('should accept a raw state exported by the app', () => {
+    const state = clone(DEFAULT_STATE);
+    state.personal.name = '导入用户';
+
+    const parsed = parseImportedState(JSON.parse(JSON.stringify(state)));
+    expect(parsed).not.toBeNull();
+    expect(parsed.personal.name).toBe('导入用户');
+  });
+
+  it('should unwrap the { version, data } wrapper used by localStorage', () => {
+    const state = clone(DEFAULT_STATE);
+    state.personal.name = '版本包装';
+
+    const parsed = parseImportedState({ version: 1, data: state });
+    expect(parsed.personal.name).toBe('版本包装');
+  });
+
+  it('should reject unrelated JSON instead of silently resetting the resume', () => {
+    expect(parseImportedState({ foo: 'bar' })).toBeNull();
+    expect(parseImportedState({ package: 'name', version: '1.0.0' })).toBeNull();
+    expect(parseImportedState([])).toBeNull();
+    expect(parseImportedState('string')).toBeNull();
+    expect(parseImportedState(null)).toBeNull();
+  });
+
+  it('should still sanitize the imported payload', () => {
+    const parsed = parseImportedState({
+      personal: { name: '<b>黑客</b>' },
+      template: 'evil-template',
+      sectionOrder: ['skills', 'nope', 'skills'],
+      experience: 'not-an-array'
+    });
+
+    expect(parsed.personal.name).toBe('<b>黑客</b>');
+    expect(parsed.template).toBe(DEFAULT_STATE.template);
+    // 缺失模块被补齐，避免导入后模块彻底无法恢复
+    expect(parsed.sectionOrder).toEqual(['skills', 'summary', 'experience', 'projects', 'education']);
+    expect(Array.isArray(parsed.experience)).toBe(true);
   });
 });

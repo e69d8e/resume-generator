@@ -14,6 +14,12 @@ const STORAGE_KEY = 'resumify_state';
 const STORAGE_VERSION = 1;
 
 const SECTION_KEYS = Object.keys(SECTION_NAMES);
+// 导入文件必须至少命中两个已知字段，避免把任意 JSON（甚至 localStorage 的
+// {version,data} 包装）当成简历数据，导致"导入成功"但内容被静默重置
+const RESUME_KEYS = [
+  'personal', 'summary', 'experience', 'education', 'projects', 'skills',
+  'sectionOrder', 'sectionVisibility', 'sectionColumns', 'theme', 'font', 'spacing', 'template'
+];
 const VALID_TEMPLATES = TEMPLATES.map(t => t.id);
 const VALID_THEMES = COLOR_PRESETS.map(t => t.id);
 const VALID_FONTS = FONTS.map(f => f.id);
@@ -90,6 +96,10 @@ export function mergeState(baseState, loadedState) {
 
   if (Array.isArray(loadedState.sectionOrder)) {
     const order = [...new Set(loadedState.sectionOrder.filter(key => SECTION_KEYS.includes(key)))];
+    // 补齐缺失项：SectionSorter 只渲染 order 中的模块，缺失的模块将永远无法在界面上恢复
+    SECTION_KEYS.forEach(key => {
+      if (!order.includes(key)) order.push(key);
+    });
     if (order.length > 0) {
       result.sectionOrder = order;
     }
@@ -121,6 +131,23 @@ export function mergeState(baseState, loadedState) {
   result.template = pickEnum(loadedState.template, VALID_TEMPLATES, result.template);
 
   return result;
+}
+
+export function isResumeStateLike(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+  // 未命名字段的空对象（如 {}) 不算简历数据
+  return RESUME_KEYS.filter(key => key in value).length >= 2;
+}
+
+// 导入入口：兼容 { version, data } 包装与本工具导出的裸 state；无法识别时返回 null，
+// 由调用方提示错误并保留用户现有数据
+export function parseImportedState(parsed) {
+  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return null;
+  const payload = parsed.data && typeof parsed.data === 'object' && !Array.isArray(parsed.data) && 'version' in parsed
+    ? parsed.data
+    : parsed;
+  if (!isResumeStateLike(payload)) return null;
+  return mergeState(DEFAULT_STATE, payload);
 }
 
 export function loadStateFromLocalStorage() {

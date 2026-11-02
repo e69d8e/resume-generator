@@ -14,6 +14,7 @@ export default function AvatarCropModal() {
 
   const viewportRef = useRef(null);
   const contentRef = useRef(null);
+  const imageRef = useRef(null);
   const dragStartRef = useRef({ x: 0, y: 0 });
   const startPosRef = useRef({ x: 0, y: 0 });
 
@@ -52,17 +53,20 @@ export default function AvatarCropModal() {
     return () => document.removeEventListener('keydown', handleKeyDown, true);
   }, [cropModal.isOpen, closeCropModal]);
 
-  // Initialize shape from personal.avatarShape
-  useEffect(() => {
-    if (cropModal.isOpen) {
-      const initialShape = state.personal?.avatarShape || 'circle';
-      setSelectedShape(initialShape);
-      setZoom(1);
-      // 重置平移与原图尺寸，避免连续裁剪时残留上一张图的状态
-      setPos({ x: 0, y: 0 });
-      setNaturalSize({ width: 0, height: 0 });
-    }
-  }, [cropModal.isOpen, state.personal?.avatarShape]);
+  // 打开（或换图）时在 render 阶段同步重置：被动 useEffect 可能晚于 <img> 的 load
+  // 事件执行，那样会把 onLoad 写入的原图尺寸/居中结果又改回 0，导致图片不按 cover
+  // 适配、且“确认”被“图片尚未加载完成”拦下。由此改为渲染期同步重置 + 换 key 重挂载。
+  const [openedFor, setOpenedFor] = useState(null);
+  const [imageKey, setImageKey] = useState(0);
+  const openKey = cropModal.isOpen ? cropModal.imageUrl : null;
+  if (openKey !== openedFor) {
+    setOpenedFor(openKey);
+    setImageKey((key) => key + 1);
+    setZoom(1);
+    setPos({ x: 0, y: 0 });
+    setNaturalSize({ width: 0, height: 0 });
+    if (openKey) setSelectedShape(state.personal?.avatarShape || 'circle');
+  }
 
   // Compute base fit scale and initial centering
   const resetToCenter = useCallback((nw, nh, vw = viewportWidth, vh = viewportHeight, customZoom = 1) => {
@@ -167,7 +171,10 @@ export default function AvatarCropModal() {
 
   // Confirm crop and export high-res canvas
   const handleConfirm = useCallback(() => {
-    if (!naturalSize.width || !naturalSize.height) {
+    // 兜底：即使原图尺寸 state 因竞态没写进来，也从 <img> 直接读一次
+    const naturalWidth = naturalSize.width || imageRef.current?.naturalWidth || 0;
+    const naturalHeight = naturalSize.height || imageRef.current?.naturalHeight || 0;
+    if (!naturalWidth || !naturalHeight) {
       showToast('图片尚未加载完成，请稍候再试', 'error');
       return;
     }
@@ -182,11 +189,11 @@ export default function AvatarCropModal() {
     const scaleX = outWidth / viewportWidth;
     const scaleY = outHeight / viewportHeight;
 
-    const baseScale = Math.max(viewportWidth / naturalSize.width, viewportHeight / naturalSize.height);
+    const baseScale = Math.max(viewportWidth / naturalWidth, viewportHeight / naturalHeight);
     const totalScale = baseScale * zoom;
 
-    const renderW = naturalSize.width * totalScale;
-    const renderH = naturalSize.height * totalScale;
+    const renderW = naturalWidth * totalScale;
+    const renderH = naturalHeight * totalScale;
 
     ctx.save();
     if (selectedShape === 'circle') {
@@ -225,7 +232,6 @@ export default function AvatarCropModal() {
     };
     img.src = cropModal.imageUrl;
   }, [naturalSize, isRect, viewportWidth, viewportHeight, zoom, pos, selectedShape, cropModal.imageUrl, updatePersonal, closeCropModal, showToast]);
-
   if (!cropModal.isOpen) return null;
 
   const baseScale = naturalSize.width ? Math.max(viewportWidth / naturalSize.width, viewportHeight / naturalSize.height) : 1;
@@ -275,6 +281,8 @@ export default function AvatarCropModal() {
           onPointerUp={onPointerUp}
         >
           <img
+            key={imageKey}
+            ref={imageRef}
             src={cropModal.imageUrl}
             alt="Crop target"
             className="crop-image"

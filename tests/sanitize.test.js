@@ -121,13 +121,15 @@ describe('XSS escaping & import sanitization', () => {
       expect(merged.personal.name).toBe('张三');
     });
 
-    it('should keep only valid sections in sectionOrder and coerce visibility/columns', () => {
+    it('should keep only valid sections in sectionOrder, backfill missing ones and coerce visibility/columns', () => {
       const merged = mergeState(DEFAULT_STATE, {
         sectionOrder: ['experience', 'evil-section', 'experience', 'skills'],
         sectionVisibility: { experience: false, skills: 'yes', summary: 0 },
         sectionColumns: { experience: 'right', skills: 'center' }
       });
-      expect(merged.sectionOrder).toEqual(['experience', 'skills']);
+      // 合法项保留原顺序，未知/重复项去掉；缺失模块补到末尾，
+      // 否则 SectionSorter 无法把它们加回来
+      expect(merged.sectionOrder).toEqual(['experience', 'skills', 'summary', 'projects', 'education']);
       expect(merged.sectionVisibility.experience).toBe(false);
       expect(merged.sectionVisibility.skills).toBe(true);
       // 语义与消费方一致：仅严格等于 false 才视为隐藏

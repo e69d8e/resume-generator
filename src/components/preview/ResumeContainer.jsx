@@ -2,6 +2,7 @@ import React, { useRef, useEffect, useState, useCallback, useDeferredValue } fro
 import { useResumeData, useResumeUI } from '../../context/ResumeContext.jsx';
 import ResumePage from './ResumePage.jsx';
 import { renderFullResumeHTML, paginateContent } from '../../utils/pagination.js';
+import { readEditableText } from '../../utils/domText.js';
 import { ZOOM_MIN, ZOOM_MAX, ZOOM_STEP, ZOOM_FIT_CAP } from '../../constants/defaultState.js';
 
 export default function ResumeContainer({ onPageCountChange }) {
@@ -100,7 +101,8 @@ export default function ResumeContainer({ onPageCountChange }) {
     const target = e.target;
     const path = target.getAttribute('data-path');
     if (!path) return;
-    const val = target.textContent || '';
+    // 必须还原 <br>/块级元素的换行，否则在预览里编辑多行描述会把换行吞掉
+    const val = readEditableText(target);
     const parts = path.split('.');
     if (parts.length === 2 && parts[0] === 'personal') {
       updatePersonal(parts[1], val);
